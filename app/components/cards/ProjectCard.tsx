@@ -21,8 +21,8 @@ export default function ProjectCard() {
                             ))}
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                            <PrimaryButton label="LIVE PROJECT" href={project.liveLink} />
-                            <PrimaryButton label="VIEW REPO" href={project.repoLink} />
+                            <PrimaryButton label="LIVE PROJECT" href={project.liveLink} target="_blank" />
+                            <PrimaryButton label="VIEW REPO" href={project.repoLink} target="_blank" />
                         </div>
                     </ObjectCard>
                 </div>

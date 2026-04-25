@@ -95,13 +95,25 @@ export const certificateList: CertificateProps[] = [
             "OBSERVABILITY"
         ],
         link: "https://catalog-education.oracle.com/ords/certview/sharebadge?id=1940A68E7777C07EE681EE8110DE2D683D7EAB5B023C76C5825FD5E0ACD5CA47"
+    },
+    {
+        id: 4,
+        title: "CISCO CYBEROPS ASSOCIATE COURSE",
+        description: "Completed the Cisco CyberOps Associate course, covering security monitoring, host-based analysis, network intrusion analysis, and security policies and procedures. Preparing for the CBROPS exam.",
+        tags: [
+            "CISCO",
+            "SECURITY OPERATIONS",
+            "NETWORK SECURITY"
+        ],
+        link: "https://www.credly.com/badges/17407221-cc98-44de-9683-711a8b4f5746/linked_in_profile"
+
     }
 ]
 
 export const educationList: EducationProps[] = [
     {
         id: 1,
-        course: "BSc (Honours) in Coputer Systems Engineering",
+        course: "BSc (Honours) in Computer Systems Engineering",
         institute: "University of Sunderland",
         startDate: "August 2017",
         endDate: "August 2021",
@@ -120,11 +132,11 @@ export const projectList: ProjectProps[] = [
         id: 1,
         title: "PORTFOLIO WEBSITE",
         imageSrc: "/images/portfolio thumbnail.webp",
-        description: "Cupidatat pariatur ipsum laborum deserunt veniam irure tincidunt consequat viverra reprehenderit lorem.",
+        description: "A personal portfolio built with Next.js and deployed on Vercel, showcasing my experience, certifications, and projects in cybersecurity and software development.",
         tags: [
-            "REACT",
-            "HTML",
-            "CSS"
+            "NEXT.JS",
+            "TAILWIND CSS",
+            "TYPESCRIPT"
         ],
         liveLink: "https://phatsimopheko.com",
         repoLink: "https://github.com/pat-2142/next.js-portfolio"

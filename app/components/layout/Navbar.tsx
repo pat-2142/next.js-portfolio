@@ -48,7 +48,7 @@ export default function Navbar() {
         >
             {/* Top bar */}
             <div className="flex items-center justify-between p-6 md:p-8">
-                <div>PHATSIMO</div>
+                <div>PHATSIMO PHEKO</div>
 
                 {/* Desktop links — hidden on mobile */}
                 <div className="hidden md:flex items-center gap-4">
