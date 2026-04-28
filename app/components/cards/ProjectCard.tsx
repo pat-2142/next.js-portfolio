@@ -1,8 +1,6 @@
 import { projectList } from "@/app/lib/data";
 import { SectionWrapper } from "../layout";
-import { ImageWrapper, ObjectCard, PrimaryButton } from "../ui";
-import Image from "next/image";
-import Tag from "../ui/Tag";
+import { ImageWrapper, ObjectCard, PrimaryButton, Tag } from "../ui";
 
 export default function ProjectCard() {
     return (
