@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import { SITE, COLORS } from "@/app/lib/constants";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE.stagingUrl),
+  metadataBase: new URL(SITE.url),
   // %s is replaced by each page's own title export (e.g. "Labs & Projects")
   title: {
     template: `%s | ${SITE.name}`,
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   authors: [{ name: SITE.name, url: SITE.url }],
   openGraph: {
     type: "website",
-    url: SITE.stagingUrl,
+    url: SITE.url,
     title: `${SITE.name} | ${SITE.role}`,
     description: SITE.shortDescription,
     images: [{ url: SITE.headshotPath, width: 800, height: 800, alt: SITE.name }],
