@@ -1,7 +1,6 @@
 import { certificateList } from "@/app/lib/data";
 import { SectionWrapper } from "../layout";
-import { ObjectCard, PrimaryButton } from "../ui";
-import Tag from "../ui/Tag";
+import { ObjectCard, PrimaryButton, Tag } from "../ui";
 
 export default function CertificateCard() {
     return (

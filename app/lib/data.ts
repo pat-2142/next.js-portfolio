@@ -1,4 +1,3 @@
-import { title } from "process";
 import { CertificateProps, EducationProps, ExperienceProps, ProjectProps, SkillProps } from "./types";
 
 export const experienceList: ExperienceProps[] = [

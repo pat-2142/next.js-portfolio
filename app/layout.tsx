@@ -1,69 +1,53 @@
-import { Geist } from 'next/font/google';
+// layout.tsx — root layout applied to every page in the app.
+// Sets global metadata (title template, OG tags, Twitter card) using values
+// from constants so they're never duplicated across files.
+// Also loads the Geist font and renders the persistent Navbar.
+import { Geist } from "next/font/google";
 import { Navbar } from "./components/layout";
 import "./globals.css";
-// app/layout.tsx
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { SITE, COLORS } from "@/app/lib/constants";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://next-js-portfolio-gules.vercel.app'), // swap with https://phatsimopheko.com once live
+  metadataBase: new URL(SITE.stagingUrl),
+  // %s is replaced by each page's own title export (e.g. "Labs & Projects")
   title: {
-    template: '%s | Phatsimo Pheko',
-    default: 'Phatsimo Pheko | Cybersecurity Consultant',
+    template: `%s | ${SITE.name}`,
+    default: `${SITE.name} | ${SITE.role}`,
   },
-  description:
-    'Cybersecurity consultant based in Botswana specialising in SOC operations, SIEM deployment with Wazuh, and Oracle Cloud Infrastructure. OCI Certified.',
-  keywords: [
-    'Cybersecurity Consultant',
-    'SOC Analyst',
-    'Wazuh SIEM',
-    'OCI Certified',
-    'Cloud Security',
-    'Botswana',
-    'Incident Response',
-  ],
-  authors: [{ name: 'Phatsimo Pheko', url: 'https://phatsimopheko.com' }],
+  description: SITE.description,
+  keywords: [...SITE.keywords],
+  authors: [{ name: SITE.name, url: SITE.url }],
   openGraph: {
-    type: 'website',
-    url: 'https://next-js-portfolio-gules.vercel.app',
-    title: 'Phatsimo Pheko | Cybersecurity Consultant',
-    description:
-      'SOC operations, Wazuh SIEM deployment, and OCI-certified cloud security — based in Botswana, open to remote.',
-    images: [
-      {
-        url: '/images/headshot.jpeg',
-        width: 800,
-        height: 800,
-        alt: 'Phatsimo Pheko',
-      },
-    ],
+    type: "website",
+    url: SITE.stagingUrl,
+    title: `${SITE.name} | ${SITE.role}`,
+    description: SITE.shortDescription,
+    images: [{ url: SITE.headshotPath, width: 800, height: 800, alt: SITE.name }],
   },
   twitter: {
-    card: 'summary',
-    title: 'Phatsimo Pheko | Cybersecurity Consultant',
-    description:
-      'SOC operations, Wazuh SIEM deployment, and OCI-certified cloud security — based in Botswana, open to remote.',
-    images: ['/images/headshot.jpeg'],
+    card: "summary",
+    title: `${SITE.name} | ${SITE.role}`,
+    description: SITE.shortDescription,
+    images: [SITE.headshotPath],
   },
-}
+};
 
-const geist = Geist({
-  subsets: ['latin'],
-});
+const geist = Geist({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={geist.className}>
-      <body className={'max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8'} style={{ backgroundColor: '#0F1523' }}>
+      <body
+        className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8"
+        style={{ backgroundColor: COLORS.background }}
+      >
         <header>
           <Navbar />
         </header>
-        <main className='mt-25'>
-          {children}
-        </main>
+        <main className="mt-25">{children}</main>
       </body>
     </html>
   );

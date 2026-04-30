@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { SectionWrapper } from "../layout";
-import { ImageWrapper, PrimaryButton, SecondaryButton } from "../ui";
+import { PrimaryButton, SecondaryButton } from "../ui";
 
 export default function HeroCard() {
     return (

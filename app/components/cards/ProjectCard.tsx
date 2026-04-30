@@ -1,8 +1,6 @@
 import { projectList } from "@/app/lib/data";
 import { SectionWrapper } from "../layout";
-import { ImageWrapper, ObjectCard, PrimaryButton } from "../ui";
-import Image from "next/image";
-import Tag from "../ui/Tag";
+import { ImageWrapper, ObjectCard, PrimaryButton, Tag } from "../ui";
 
 export default function ProjectCard() {
     return (
@@ -12,7 +10,7 @@ export default function ProjectCard() {
                     <ObjectCard>
                         <h3 className="font-bold text-center">{project.title}</h3>
                         <div className="flex justify-center rounded-4xl">
-                            <ImageWrapper width={280} height={200} src={project.imageSrc} alt="Project Thumnail" className="rounded-2xl" />
+                            <ImageWrapper width={280} height={200} src={project.imageSrc} alt="Project Thumbnail" className="rounded-2xl" />
                         </div>
                         <p>{project.description}</p>
                         <div className="flex text-nowrap flex-wrap gap-2">
