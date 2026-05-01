@@ -7,7 +7,7 @@ export interface CardProps {
 
 export interface SectionWrapperProps {
   children: React.ReactNode;
-  heading: string;
+  heading?: string;
 }
 
 export interface ButtonProps {
