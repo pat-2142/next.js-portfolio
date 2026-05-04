@@ -16,7 +16,7 @@ export default function HeroCard() {
             <div className="flex flex-1 items-center justify-center">
                 <div className="relative w-64 h-64 md:w-96 md:h-96">
                     <Image
-                        src="/images/headshot.jpeg"
+                        src="/images/headshot.jpg"
                         alt="headshot"
                         fill
                         className="rounded-full ring-2 md:ring-5 ring-[#6366F1] object-cover"
