@@ -20,6 +20,7 @@ export default function HeroCard() {
                         alt="headshot"
                         fill
                         className="rounded-full ring-2 md:ring-5 ring-[#6366F1] object-cover"
+                        priority={true}
                     />
                 </div>
             </div>
