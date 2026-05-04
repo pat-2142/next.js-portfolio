@@ -13,7 +13,7 @@ export const SITE = {
     "Cybersecurity consultant based in Botswana specialising in SOC operations, SIEM deployment with Wazuh, and Oracle Cloud Infrastructure. OCI Certified.",
   shortDescription:
     "SOC operations, Wazuh SIEM deployment, and OCI-certified cloud security — based in Botswana, open to remote.",
-  headshotPath: "/images/headshot.jpeg",
+  headshotPath: "/images/headshot.jpg",
   keywords: [
     "Cybersecurity Consultant",
     "SOC Analyst",
