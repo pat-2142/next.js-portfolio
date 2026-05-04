@@ -36,7 +36,7 @@ export default function HeroCard() {
           intersection of security operations and cloud infrastructure.
         </p>
         <div className="flex gap-3 mt-5">
-          <PrimaryButton label="LINKEDIN" href={CONTACT.linkedin} target="_blank" />
+          <PrimaryButton label="VISIT LINKEDIN" href={CONTACT.linkedin} target="_blank" />
           <SecondaryButton label="VIEW PROJECTS" href="/projects" />
         </div>
       </div>
