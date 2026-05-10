@@ -4,8 +4,8 @@
 // Used in ProjectCard to display project thumbnails.
 import Image from "next/image";
 import { useState } from "react";
-import { ImageProps } from "@/app/lib/types";
-import { COLORS } from "@/app/lib/constants";
+import { ImageProps } from "@/lib/types";
+import { COLORS } from "@/lib/constants";
 
 export default function ImageWrapper({ src, alt, className }: ImageProps) {
   const [loaded, setLoaded] = useState(false);

@@ -4,8 +4,8 @@
 // which instructs the browser to save the linked file instead of navigating.
 // Used in Navbar for the CV download link.
 import Link from "next/link";
-import { ButtonProps } from "@/app/lib/types";
-import { COLORS } from "@/app/lib/constants";
+import { ButtonProps } from "@/lib/types";
+import { COLORS } from "@/lib/constants";
 
 export default function DownloadButton({ label, href, download, prefetch, target }: ButtonProps) {
   return (

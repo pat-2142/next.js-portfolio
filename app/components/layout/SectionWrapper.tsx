@@ -1,9 +1,9 @@
 // SectionWrapper — layout shell for every section on the page.
 // Wraps content in a SectionCard and applies consistent heading styles,
 // text colour, spacing, and responsive flex direction.
-import { SectionWrapperProps } from "@/app/lib/types";
+import { SectionWrapperProps } from "@/lib/types";
 import { SectionCard } from "../ui";
-import { COLORS } from "@/app/lib/constants";
+import { COLORS } from "@/lib/constants";
 
 export default function SectionWrapper({ children, heading }: SectionWrapperProps) {
   return (

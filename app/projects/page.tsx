@@ -5,10 +5,10 @@
 import ProjectCard from "../components/cards/ProjectCard";
 import MotionWrapper from "../components/ui/MotionWrapper";
 import { Metadata } from "next";
-import { buildPageTitle } from "@/app/lib/utils";
+import { buildPageTitle } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: buildPageTitle("Labs & Projects"),
+  title: buildPageTitle("Projects"),
   description:
     "Hands-on cybersecurity and cloud projects by Phatsimo Pheko — SIEM labs, OCI infrastructure, and security operations work.",
 };

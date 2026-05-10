@@ -1,4 +1,4 @@
-import { projectList } from "@/app/lib/data";
+import { projectList } from "@/lib/data";
 import { SectionWrapper } from "../layout";
 import { ImageWrapper, ObjectCard, PrimaryButton, Tag } from "../ui";
 

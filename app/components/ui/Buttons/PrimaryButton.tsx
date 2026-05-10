@@ -2,8 +2,8 @@
 // Solid accent-coloured CTA button. Used for "VIEW CERTIFICATE", "LIVE PROJECT" etc.
 // Hover swaps to accentHover, consistent with DownloadButton.
 import Link from "next/link";
-import { ButtonProps } from "@/app/lib/types";
-import { COLORS } from "@/app/lib/constants";
+import { ButtonProps } from "@/lib/types";
+import { COLORS } from "@/lib/constants";
 
 export default function PrimaryButton({ label, href, target }: ButtonProps) {
   return (

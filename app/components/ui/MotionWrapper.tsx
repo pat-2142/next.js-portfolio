@@ -4,8 +4,8 @@
 // configurable via props; defaults to sliding up with no delay.
 // The direction map and duration come from constants to keep values consistent.
 import { motion } from "framer-motion";
-import { MotionProps } from "@/app/lib/types";
-import { MOTION_DIRECTION_MAP, MOTION_DURATION } from "@/app/lib/constants";
+import { MotionProps } from "@/lib/types";
+import { MOTION_DIRECTION_MAP, MOTION_DURATION } from "@/lib/constants";
 
 export default function MotionWrapper({
   children,

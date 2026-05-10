@@ -1,7 +1,7 @@
 // Tag — small pill label used to display technology or category tags.
 // Appears in CertificateCard and ProjectCard beneath descriptions.
 // The unused framer-motion import has been removed.
-import { TagProps } from "@/app/lib/types";
+import { TagProps } from "@/lib/types";
 
 export default function Tag({ children }: TagProps) {
   return (

@@ -3,7 +3,7 @@
 // to update if an email address or social handle changes.
 import { SectionWrapper } from "../layout";
 import { ObjectCard } from "../ui";
-import { CONTACT } from "@/app/lib/constants";
+import { CONTACT } from "@/lib/constants";
 
 export default function ContactCard() {
   return (

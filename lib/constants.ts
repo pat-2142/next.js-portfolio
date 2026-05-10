@@ -40,7 +40,8 @@ export const CONTACT = {
 // Used in Navbar for both desktop and mobile menus — defined once, rendered twice.
 export const NAV_LINKS = [
   { label: "HOME", href: "/" },
-  { label: "LABS & PROJECTS", href: "/projects" },
+  { label: "LABS", href: "/labs" },
+  { label: "PROJECTS", href: "/projects" },
 ] as const;
 
 // ─── CV download ──────────────────────────────────────────────────────────────

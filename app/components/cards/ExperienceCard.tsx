@@ -1,8 +1,8 @@
 // ExperienceCard — lists all work experience entries from data.ts.
 // Each entry is rendered in its own ObjectCard with a formatted date range
 // produced by the formatDateRange util, keeping the heading template DRY.
-import { experienceList } from "@/app/lib/data";
-import { formatDateRange } from "@/app/lib/utils";
+import { experienceList } from "@/lib/data";
+import { formatDateRange } from "@/lib/utils";
 import { SectionWrapper } from "../layout";
 import { ObjectCard } from "../ui";
 

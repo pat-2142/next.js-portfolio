@@ -2,10 +2,10 @@
 // Nav link that highlights when its route is active.
 // Hover handled via mouse events since COLORS values can't go directly in Tailwind classes.
 // Guards against overriding the active state colour on hover.
-import { ButtonProps } from "@/app/lib/types";
+import { ButtonProps } from "@/lib/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { COLORS } from "@/app/lib/constants";
+import { COLORS } from "@/lib/constants";
 
 export default function NavButton({ label, href }: ButtonProps) {
   const pathname = usePathname();

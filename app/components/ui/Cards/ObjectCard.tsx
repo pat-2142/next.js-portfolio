@@ -1,8 +1,8 @@
 // ObjectCard — inner content card with a slightly lighter background.
 // Used inside SectionWrapper to group related content (e.g. a single job,
 // a certificate, a project). Stacks its children vertically with a gap.
-import { CardProps } from "@/app/lib/types";
-import { COLORS } from "@/app/lib/constants";
+import { CardProps } from "@/lib/types";
+import { COLORS } from "@/lib/constants";
 
 export default function ObjectCard({ children }: CardProps) {
   return (

@@ -1,0 +1,58 @@
+---
+title: "WAZUH SIEM SETUP GUIDE"
+description: "A practical walkthrough for deploying and configuring Wazuh SIEM for centralized security monitoring"
+date: "2026-05-09"
+---
+
+# Wazuh SIEM Setup Guide
+
+Wazuh is an open-source security platform used for threat detection, log analysis, file integrity monitoring, vulnerability detection, and incident response. It combines endpoint visibility with centralized event correlation, making it a strong option for organizations building a Security Information and Event Management (SIEM) environment.
+
+<br />
+
+## Overview
+
+A standard Wazuh deployment consists of several components working together:
+
+- **Wazuh Server** — Processes and correlates security events.
+- **Wazuh Agents** — Installed on monitored endpoints such as Linux servers, Windows workstations, and cloud instances.
+- **Indexer** — Stores and indexes logs for searching and analytics.
+- **Dashboard** — Provides visualization, alerting, and investigation capabilities.
+
+<br />
+
+## System Requirements
+
+Before deploying Wazuh, ensure the environment meets the following minimum requirements:
+
+| Component | Minimum Requirement |
+|---|---|
+| CPU | 4 Cores |
+| Memory | 8 GB RAM |
+| Storage | 50 GB SSD |
+| Operating System | Ubuntu 22.04 or Rocky Linux 9 |
+| Network | Stable internal connectivity |
+
+<br />
+
+## Architecture Example
+
+A typical production deployment may look like this:
+
+```text
++-------------------+
+| Wazuh Dashboard   |
++---------+---------+
+          |
++---------v---------+
+| Wazuh Indexer     |
++---------+---------+
+          |
++---------v---------+
+| Wazuh Manager     |
++----+--------+-----+
+     |        |
++----v--+  +--v----+
+| Agent |  | Agent |
+| Linux |  | Win10 |
++-------+  +-------+

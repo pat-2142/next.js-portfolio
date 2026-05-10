@@ -1,4 +1,4 @@
-import { certificateList } from "@/app/lib/data";
+import { certificateList } from "@/lib/data";
 import { SectionWrapper } from "../layout";
 import { ObjectCard, PrimaryButton, Tag } from "../ui";
 

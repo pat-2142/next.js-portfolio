@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { NavButton } from "../ui";
 import { usePathname } from "next/navigation";
 import DownloadButton from "../ui/Buttons/DownloadButton";
-import { NAV_LINKS, CV, COLORS, SCROLL_HIDE_THRESHOLD } from "@/app/lib/constants";
+import { NAV_LINKS, CV, COLORS, SCROLL_HIDE_THRESHOLD } from "@/lib/constants";
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 // Tracks scroll direction so the navbar can slide out of view on scroll down

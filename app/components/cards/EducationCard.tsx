@@ -1,8 +1,8 @@
 // EducationCard — lists all education entries from data.ts.
 // Uses formatDateRange for the date span in each heading, consistent
 // with how ExperienceCard formats its dates.
-import { educationList } from "@/app/lib/data";
-import { formatDateRange } from "@/app/lib/utils";
+import { educationList } from "@/lib/data";
+import { formatDateRange } from "@/lib/utils";
 import { SectionWrapper } from "../layout";
 import { ObjectCard } from "../ui";
 

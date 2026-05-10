@@ -1,8 +1,8 @@
 // SectionCard — outer container card for a page section.
 // Provides the darker background and rounded corners that frame each section.
 // Used by SectionWrapper so every section has a consistent shell.
-import { CardProps } from "@/app/lib/types";
-import { COLORS } from "@/app/lib/constants";
+import { CardProps } from "@/lib/types";
+import { COLORS } from "@/lib/constants";
 
 export default function SectionCard({ children }: CardProps) {
   return (

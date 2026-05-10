@@ -1,4 +1,4 @@
-import { skillsList } from "@/app/lib/data";
+import { skillsList } from "@/lib/data";
 import { SectionWrapper } from "../layout";
 import { ObjectCard } from "../ui";
 

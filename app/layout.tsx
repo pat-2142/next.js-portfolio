@@ -6,7 +6,7 @@ import { Geist } from "next/font/google";
 import { Navbar } from "./components/layout";
 import "./globals.css";
 import type { Metadata } from "next";
-import { SITE, COLORS } from "@/app/lib/constants";
+import { SITE, COLORS } from "@/lib/constants";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),

@@ -8,8 +8,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { SectionWrapper } from "../layout";
 import { PrimaryButton, SecondaryButton } from "../ui";
-import { COLORS, CONTACT } from "@/app/lib/constants";
-import { SITE } from "@/app/lib/constants";
+import { COLORS, CONTACT } from "@/lib/constants";
+import { SITE } from "@/lib/constants";
 
 export default function HeroCard() {
   // Tracks whether the headshot has finished loading

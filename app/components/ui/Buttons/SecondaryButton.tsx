@@ -2,8 +2,8 @@
 // Outlined button for secondary actions — sits visually below PrimaryButton.
 // Hover swaps border and background to accentHover, consistent with DownloadButton.
 import Link from "next/link";
-import { ButtonProps } from "@/app/lib/types";
-import { COLORS } from "@/app/lib/constants";
+import { ButtonProps } from "@/lib/types";
+import { COLORS } from "@/lib/constants";
 
 export default function SecondaryButton({ label, href }: ButtonProps) {
   return (
