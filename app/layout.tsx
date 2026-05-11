@@ -7,6 +7,7 @@ import { Navbar } from "./components/layout";
 import "./globals.css";
 import type { Metadata } from "next";
 import { SITE, COLORS } from "@/lib/constants";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -49,6 +50,7 @@ export default function RootLayout({
         </header>
         <main className="mt-25">{children}</main>
       </body>
+      <GoogleAnalytics gaId="G-SBK6LSX3BC" />
     </html>
   );
 }
