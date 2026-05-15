@@ -35,15 +35,22 @@ export default async function LabActivity({ params }: ParamProps) {
     notFound();
   }
 
+  const components = {
+    pre: ({ children }: { children: React.ReactNode }) => (
+      <pre className="whitespace-pre-wrap break-all overflow-x-auto text-sm rounded-md p-4 bg-gray-900 text-gray-100">
+        {children}
+      </pre>
+    ),
+  };
+
   return (
     // SectionWrapper provides consistent page padding and renders the
     // frontmatter `title` field as the visible page heading.
     <SectionWrapper heading={post.frontmatter.title}>
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col flex-wrap">
 
             {/* Frontmatter fields are plain strings extracted by gray-matter —
                 no MDX rendering needed for these short metadata values. */}
-            <p>{post.frontmatter.description}</p>
 
             {/* MDXRemote (RSC edition) compiles and renders the MDX body on the
                 server. `source` receives the raw MDX string from the parsed file.
@@ -51,11 +58,13 @@ export default async function LabActivity({ params }: ParamProps) {
                 the output is plain HTML sent to the browser.
                 You can pass a `components` prop here to swap MDX elements for
                 your own React components (e.g. custom code blocks, callouts). */}
-            <MDXRemote source={post.content} />
-
-            <div className="flex gap-2 pt-4">
-                {/* Navigate back to the labs listing page after reading a post. */}
-                <PrimaryButton href={'/labs'} label="BACK TO LABS" />
+            <div className="flex flex-1 flex-col flex-wrap min-w-0">
+              <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
+                <MDXRemote source={post.content} components={components} />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <PrimaryButton href={"/labs"} label="BACK TO LABS" />
+              </div>
             </div>
         </div>
     </SectionWrapper>

@@ -1,58 +1,245 @@
 ---
-title: "WAZUH SIEM SETUP GUIDE"
-description: "A practical walkthrough for deploying and configuring Wazuh SIEM for centralized security monitoring"
+title: "Building a Home SOC Environment Using Wazuh"
+description: "A practical case study documenting the deployment, troubleshooting, and configuration of a Wazuh-based SOC lab using constrained hardware and virtualized infrastructure."
 date: "2026-05-09"
 ---
 
-# Wazuh SIEM Setup Guide
 
-Wazuh is an open-source security platform used for threat detection, log analysis, file integrity monitoring, vulnerability detection, and incident response. It combines endpoint visibility with centralized event correlation, making it a strong option for organizations building a Security Information and Event Management (SIEM) environment.
+## Introduction
+This lab documents the deployment of a small Security Operations Center (SOC) environment using the open-source SIEM platform Wazuh.
 
-<br />
+The objective of the project was to:
 
-## Overview
+- Deploy a centralized Wazuh server
+- Configure Linux and Windows agents
+- Enable centralized log collection and monitoring
+- Simulate a lightweight SOC environment using limited hardware resources
 
-A standard Wazuh deployment consists of several components working together:
+Unlike a standard walkthrough, this deployment involved multiple installation failures, compatibility issues, virtualization constraints, and endpoint enrollment conflicts. These challenges ultimately became one of the most valuable parts of the lab.
 
-- **Wazuh Server** — Processes and correlates security events.
-- **Wazuh Agents** — Installed on monitored endpoints such as Linux servers, Windows workstations, and cloud instances.
-- **Indexer** — Stores and indexes logs for searching and analytics.
-- **Dashboard** — Provides visualization, alerting, and investigation capabilities.
 
-<br />
+## Lab Environment
+The environment was built using two physical laptops.
 
-## System Requirements
+### Host System 1 — Wazuh Server Host
+- CPU: Intel i3-6006U
+- RAM: 12 GB
+- Storage: 1 TB HDD
+- Operating System: Windows 10
 
-Before deploying Wazuh, ensure the environment meets the following minimum requirements:
+This system was selected to host the Wazuh server because it had more available memory. However, the aging mechanical hard drive later became a significant performance bottleneck during deployment.
 
-| Component | Minimum Requirement |
-|---|---|
-| CPU | 4 Cores |
-| Memory | 8 GB RAM |
-| Storage | 50 GB SSD |
-| Operating System | Ubuntu 22.04 or Rocky Linux 9 |
-| Network | Stable internal connectivity |
+### Host System 2 — Administration and Endpoint Host
+- CPU: Intel i3-1005G1
+- RAM: 8 GB
+- Storage: 256 GB SSD
+- Operating System: Windows 11 Pro
 
-<br />
+This laptop was primarily used for remote administration, endpoint enrollment, SSH access, running the Windows agent
 
-## Architecture Example
+## Virtualization Platform
 
-A typical production deployment may look like this:
+The lab environment was built using:
+
+- Oracle VirtualBox
+- Ubuntu Server virtual machines
+- Xubuntu virtual machines for Linux agents
+
+Although Wazuh supports distributed deployments with separate components for the manager, dashboard, and indexer, this lab used the all-in-one deployment model due to hardware limitations and the small scale of the environment.
+
+
+## Initial Wazuh Server Configuration
+The initial Wazuh server VM was configured with the following specifications:
+
+- vCPU:2
+- Memory: 4096 MB
+- Storage: 40 GB
+- Operating System: Ubuntu Server 26.04 LTS
+
+The installation was started using the official Wazuh all-in-one deployment script:
+
+```bash
+curl -so https://packages.wazuh.com/4.14/wazuh-install.sh && sudo bash ./wazuh-install.sh -a
+```
+
+
+## Initial Installation Failures
+During the first installation attempt, the installer displayed a warning indicating that Ubuntu Server 26.04 was not yet part of Wazuh's officially recommended operating systems.
+
+Although the installation proceeded, it eventually failed with an out-of-memory error before rolling back the installation automatically.
+
+### Troubleshooting Attempt 1 — Increasing Storage
+The VM storage allocation was increased from 40 GB to 70 GB and the installation was attempted again.
+
+The second attempt also failed, although this time the installer did not provide a clear diagnostic message.
+
+At this stage, it was suspected that residual files from the previous failed installation may have caused conflicts during subsequent deployment attempts.
+
+## Rebuilding the Environment
+
+To eliminate the possibility of corrupted installation remnants, the Ubuntu Server VM was rebuilt from scratch.
+
+A clean VM snapshot was also created immediately after the operating system installation to reduce recovery time during future troubleshooting.
+
+This proved extremely useful later in the deployment process.
+
+
+## Wazuh API User Creation Error
+After rebuilding the VM, the installation failed again with the following error:
 
 ```text
-+-------------------+
-| Wazuh Dashboard   |
-+---------+---------+
-          |
-+---------v---------+
-| Wazuh Indexer     |
-+---------+---------+
-          |
-+---------v---------+
-| Wazuh Manager     |
-+----+--------+-----+
-     |        |
-+----v--+  +--v----+
-| Agent |  | Agent |
-| Linux |  | Win10 |
-+-------+  +-------+
+ERROR: User wazuh could not be added to the Wazuh API
+```
+
+Several remediation attempts were made, including:
+- Increasing VM resources to 4 vCPUs
+- Increasing memory allocation to 8 GB RAM
+- Repeating clean installations from snapshots
+
+Despite these changes, the same issue continued to occur.
+
+
+## Root Cause Analysis
+At this point, the troubleshooting process shifted from changing resources to analyzing environmental differences between previous successful deployments and the current setup.
+
+A key observation was identified:
+
+- Previous successful installations used Xubuntu 22.04.5
+- The current deployment used Ubuntu Server 26.04 LTS
+
+Further research revealed that Ubuntu Server 26.04 had only recently been released.
+
+Although considered stable, the release was still relatively new and likely not fully compatible with the Wazuh installer and package dependencies at the time of deployment.
+
+This explained:
+- The unsupported OS warning
+- The API creation failures
+- The inconsistent installation behavior
+
+
+## Migration to Ubuntu Server 24.04.4
+To test the compatibility hypothesis, the server VM was rebuilt again using Ubuntu Server 24.04.4 LTS.
+
+Immediately, one major difference was observed:
+
+- The unsupported operating system warning no longer appeared during installation
+
+This strongly indicated that the operating system version had been one of the root causes of the earlier deployment failures.
+
+However, although the previous API error disappeared, the installation still failed due to timeout-related errors.
+
+
+## Storage Bottleneck Discovery
+At this point, attention shifted to the host hardware itself.
+
+The Wazuh server was originally being installed on an aging mechanical hard drive that was nearly a decade old.
+
+The suspicion was that disk throughput limitations were causing package extraction and indexing operations to exceed installation timeout thresholds.
+
+To test this theory, the same VM was migrated to the second laptop equipped with an SSD.
+
+The VM resources were adjusted to:
+
+- vCPU: 2
+- Memory: 4096 MB
+- Storage: 70 GB
+
+Despite having less available RAM overall, the SSD-based system completed the Wazuh installation successfully.
+
+This confirmed that storage performance had been another major factor contributing to the deployment instability.
+
+
+## Post-Installation Configuration
+After the successful deployment, a backup snapshot of the fully configured Wazuh server VM was created.
+
+The default administrator password was then changed using the Wazuh password management tool:
+
+```bash
+curl -so wazuh-passwords-tool.sh https://packages.wazuh.com/4.14/wazuh-passwords-tool.sh
+```
+
+```bash
+bash wazuh-passwords-tool.sh -u admin -p <password>
+```
+
+A static IP address was also configured on the home router to ensure that future agents could reliably communicate with the Wazuh server.
+
+
+## Remote Administration
+To simplify administration, SSH access to the Wazuh server was established using MobaXterm from the secondary laptop.
+
+This allowed:
+- Centralized management
+- Reduced physical switching between systems
+- Easier monitoring and troubleshooting
+
+The following services were validated using systemctl:
+
+```bash
+systemctl status wazuh-manager
+systemctl status wazuh-indexer
+systemctl status wazuh-dashboard
+```
+
+
+## Agent Deployment
+### Windows Agent
+
+The first enrolled endpoint was the Windows 11 host system.
+
+The deployment package was generated directly from the Wazuh dashboard by specifying:
+- Server IP address
+- Agent name
+- Target operating system
+
+The generated PowerShell commands were then executed locally on the Windows host.
+
+However, the endpoint initially failed to appear in the dashboard.
+
+### Root Cause
+
+The issue was traced to remnants of a previous Wazuh agent installation already present on the system.
+
+This created conflicts during agent registration.
+
+### Resolution
+The issue was resolved by:
+
+- Uninstalling the existing Wazuh agent
+- Removing the remaining `ossec-agent` directory from `Program Files (x86)`
+- Reinstalling the agent using freshly generated enrollment commands
+
+After reinstalling, the Windows endpoint successfully appeared in the dashboard.
+
+
+### Linux Agent
+A Linux agent VM was then created using Xubuntu with the following specifications:
+
+- vCPU: 1
+- Memory: 2048 MB
+- Storage: 20 GB
+
+The Linux endpoint was enrolled successfully using the same dashboard-driven deployment workflow.
+
+
+## Lessons Learned
+This lab highlighted several important operational lessons:
+
+- Newly released operating systems may not yet be fully compatible with security tooling
+- SSD storage significantly improves SIEM deployment stability and responsiveness
+- Snapshotting clean VM states dramatically reduces recovery time during troubleshooting
+- Failed agent enrollments may result from remnants of previous installations
+- Infrastructure troubleshooting should focus on root-cause analysis rather than repeated configuration changes
+
+
+## Conclusion
+Despite limited hardware and multiple installation failures, the lab successfully demonstrated the deployment of a functioning SOC environment using Wazuh.
+
+More importantly, the project reinforced practical troubleshooting methodology, infrastructure analysis, and deployment validation techniques that are directly applicable to real-world SOC and systems administration environments.
+
+Future improvements may include:
+- Integrating additional endpoints
+- Configuring attack simulations
+- Adding Sysmon telemetry
+- Deploying Suricata integration
+- Creating custom Wazuh detection rules
