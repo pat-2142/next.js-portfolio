@@ -17,6 +17,7 @@ import { SectionWrapper } from "@/app/components/layout";
 import { PrimaryButton } from "@/app/components/ui";
 import { Metadata } from "next";
 import { buildPageTitle } from "@/lib/utils";
+import { COLORS } from "@/lib/constants";
 
 export const metadata: Metadata = {
     title: buildPageTitle("Lab Activity"),
@@ -68,7 +69,7 @@ export default async function LabActivity({ params }: ParamProps) {
                 You can pass a `components` prop here to swap MDX elements for
                 your own React components (e.g. custom code blocks, callouts). */}
             <div className="flex flex-1 flex-col flex-wrap min-w-0">
-              <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
+              <div className="prose prose-sm md:prose-base max-w-none" style={{ color: COLORS.textMuted }}>
                 <MDXRemote source={post.content} components={components} />
               </div>
               <div className="flex gap-2 pt-4">

@@ -1,2 +1,28 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+:root {
+  /* Tells the browser this site is light-mode only — prevents Chrome/Edge/Safari
+     from auto-inverting colors for users with a dark OS theme. */
+  color-scheme: only light;
+}
+
+@media (forced-colors: active) {
+  /* Windows High Contrast Mode forcibly recolors elements to meet contrast ratios.
+     This opts every element out of that behavior so our design is preserved. */
+  * {
+    forced-color-adjust: none;
+  }
+}
+
+.prose {
+    /* @tailwindcss/typography controls element colors via its own CSS variables,
+        not via the inherited `color` property — so each element type must be
+        overridden directly here to match our design. */
+    --tw-prose-headings: #E8EDF5; /* h1–h6 — slightly brighter to create visual hierarchy */
+    --tw-prose-body: #C5CEDB;     /* body text */
+    --tw-prose-bold: #C5CEDB;     /* <strong> */
+    --tw-prose-links: #C5CEDB;    /* <a> */
+    --tw-prose-code: #C5CEDB;     /* inline <code> */
+    --tw-prose-quotes: #C5CEDB;   /* <blockquote> */
+}

@@ -40,7 +40,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={geist.className}>
+    <html lang="en" className={geist.className} style={{ colorScheme: "only light" }} suppressHydrationWarning>
       <body
         className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8"
         style={{ backgroundColor: COLORS.background }}
