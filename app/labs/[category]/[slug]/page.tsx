@@ -15,6 +15,15 @@ import { ParamProps } from "@/lib/types";
 import { getPostBySlug } from "@/lib/utils";
 import { SectionWrapper } from "@/app/components/layout";
 import { PrimaryButton } from "@/app/components/ui";
+import { Metadata } from "next";
+import { buildPageTitle } from "@/lib/utils";
+
+export const metadata: Metadata = {
+    title: buildPageTitle("Lab Activity"),
+    description:
+      "Detailed description of a lab activity.",
+  };
+
 
 export default async function LabActivity({ params }: ParamProps) {
   // `params` is a Promise in Next.js 15+ because route params are now async.
