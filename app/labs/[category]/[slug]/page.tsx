@@ -18,6 +18,7 @@ import { PrimaryButton } from "@/app/components/ui";
 import { Metadata } from "next";
 import { buildPageTitle } from "@/lib/utils";
 import { COLORS } from "@/lib/constants";
+import Image from "next/image";
 
 export const metadata: Metadata = {
     title: buildPageTitle("Lab Activity"),
@@ -50,6 +51,22 @@ export default async function LabActivity({ params }: ParamProps) {
       <pre className="whitespace-pre-wrap break-all overflow-x-auto text-sm rounded-md p-4 bg-gray-900 text-gray-100">
         {children}
       </pre>
+    ),
+    img: ({ src, alt }: { src?: string; alt?: string }) => (
+      <span className="block my-6">
+        <Image
+          src={src ?? ""}
+          alt={alt ?? ""}
+          width={1200}
+          height={675}
+          className="rounded-md border border-white/10 w-full h-auto"
+        />
+        {alt && (
+          <span className="block text-center text-xs mt-2 text-white/40">
+            {alt}
+          </span>
+        )}
+      </span>
     ),
   };
 
