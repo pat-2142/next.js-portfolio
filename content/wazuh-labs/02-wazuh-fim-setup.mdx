@@ -4,7 +4,6 @@ description: "Configuring and testing Wazuh's File Integrity Monitoring across W
 date: "2026-05-20"
 ---
 
-
 ## Introduction
 
 File Integrity Monitoring (FIM) is a security control that tracks changes to files, directories, and registry entries on monitored endpoints. Rather than waiting for a threat to trigger a behavioral alert, FIM establishes a trusted baseline of the filesystem and raises an alert whenever that baseline deviates — whether a file is created, modified, or deleted.
@@ -29,6 +28,7 @@ The objective of this lab was to:
 ## Lab Environment
 
 This lab was conducted within the SOC environment deployed in Lab 01. No additional infrastructure was required.
+
 
 ## Understanding the Default Syscheck Configuration
 
@@ -190,12 +190,23 @@ Three tiers were identified:
 
 <!-- ==================== TIER 3 ==================== -->
 
-<!-- Program Files — changes expected during software updates, baseline periodically -->
-<directories check_all="yes">C:\Program Files</directories>
-<directories check_all="yes">C:\Program Files (x86)</directories>
+<!-- NOTE:
+Tier 3 monitoring for Program Files and user directories was initially tested
+but later removed from the Windows host. The volume of files and frequency of
+changes caused prolonged scans and noticeably degraded FIM responsiveness on
+the lab host. In a production environment these paths would normally be monitored
+through carefully tuned exclusions, recursion limits, or scheduled scans on
+higher-specification systems.
+-->
 
-<!-- User home directories — light monitoring for insider threat and DLP use cases -->
-<directories check_sums="yes" check_size="yes">C:\Users</directories>
+<!-- Program Files — changes expected during software updates -->
+<!-- Removed after testing due to excessive scan overhead -->
+<!-- <directories check_all="yes">C:\Program Files</directories> -->
+<!-- <directories check_all="yes">C:\Program Files (x86)</directories> -->
+
+<!-- User home directories — useful for insider threat and DLP use cases -->
+<!-- Removed after testing due to excessive scan overhead -->
+<!-- <directories check_sums="yes" check_size="yes">C:\Users</directories> -->
 ```
 
 ### Linux Configuration
@@ -267,6 +278,8 @@ Several decisions in this configuration are worth highlighting explicitly.
 
 **Change management context** — In a production SOC, this configuration would be paired with a change management process. During a scheduled patching window, analysts acknowledge expected FIM alerts in bulk so they do not mask genuine detections. Without this process, patch Tuesday on a Windows environment would generate hundreds of System32 alerts and significantly degrade signal quality. The tiered approach helps by keeping Tier 3 alerts on a scheduled cadence that aligns more naturally with maintenance windows.
 
+**Operational limitation discovered during testing** — Tier 3 monitoring on the Windows lab host was ultimately removed after testing revealed that scanning large, high-churn directories such as `C:\Program Files`, `C:\Program Files (x86)`, and `C:\Users` significantly impacted FIM performance. The Windows host used in the lab had limited resources, and the volume of filesystem activity caused scans to become excessively heavy, delaying or interfering with real-time monitoring behaviour. This highlighted an important operational reality: broad FIM coverage must be balanced against endpoint performance. In production environments, these directories are typically monitored using tighter recursion limits, exclusion rules, scheduled scans, or more capable hardware.
+
 
 ## Lessons Learned
 
@@ -274,6 +287,7 @@ Several decisions in this configuration are worth highlighting explicitly.
 - The `report_changes` attribute provides significant triage value for text-based files. Seeing the exact line added to `/etc/ssh/sshd_config` or a Windows startup script is more actionable than a hash change alone.
 - Normalizing FIM events from different operating systems into the same dashboard view demonstrates the core value of a SIEM — platform differences become invisible to the analyst.
 - Monitoring the monitoring agent is a non-obvious but important configuration. Defense evasion through agent tampering is a realistic attacker behaviour that FIM can detect.
+- Large high-churn directories on Windows such as `C:\Program Files` and `C:\Users` can negatively impact FIM responsiveness on lower-specification hosts. Broad coverage needs careful tuning through exclusions, recursion limits, or scheduled scans to avoid degrading real-time monitoring performance.
 - FIM configuration is not a one-time task. As new services are deployed to an endpoint, the monitored directory list should be reviewed and updated to include their configuration paths.
 
 
@@ -282,6 +296,8 @@ Several decisions in this configuration are worth highlighting explicitly.
 This lab demonstrated the configuration and operational use of Wazuh's File Integrity Monitoring module across both Windows and Linux endpoints. Starting from the default syscheck configuration, custom directories were added and tested to confirm that creation, modification, and deletion events produce timely and detailed alerts in the dashboard.
 
 The configuration was then extended to reflect a tiered monitoring strategy aligned with real SOC practices — prioritising immediate alerting on the paths most frequently targeted by attackers, while applying lighter scheduled monitoring to directories that change during normal operations.
+
+During testing, an operational limitation was identified on the Windows lab VM where broad Tier 3 monitoring introduced enough filesystem overhead to interfere with efficient FIM operation. As a result, the Tier 3 Windows paths were removed, reinforcing the importance of balancing visibility with endpoint performance when designing FIM policies.
 
 Future improvements to this lab environment may include:
 

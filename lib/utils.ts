@@ -12,7 +12,7 @@ import { MdxData } from "./types";
 // Generates a consistent "<Section> | <Name>" page title string.
 // Used in per-page metadata exports (e.g. projects/page.tsx).
 export function buildPageTitle(section: string): string {
-  return `${section} | ${SITE.name}`;
+  return `${section}`;
 }
 
 // ─── Date range ───────────────────────────────────────────────────────────────
