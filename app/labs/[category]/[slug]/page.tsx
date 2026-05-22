@@ -20,12 +20,22 @@ import { buildPageTitle } from "@/lib/utils";
 import { COLORS } from "@/lib/constants";
 import Image from "next/image";
 
-export const metadata: Metadata = {
-    title: buildPageTitle("Lab Activity"),
-    description:
-      "Detailed description of a lab activity.",
-  };
+export async function generateMetadata({ params }: ParamProps): Promise<Metadata> {
+  const { category, slug } = await params;
+  const post = getPostBySlug(category, slug);
 
+  if (!post) {
+    return {
+      title: buildPageTitle("Lab Activity"),
+      description: "Detailed description of a lab activity.",
+    };
+  }
+
+  return {
+    title: buildPageTitle(post.frontmatter.title),
+    description: post.frontmatter.description ?? "Detailed description of a lab activity.",
+  };
+}
 
 export default async function LabActivity({ params }: ParamProps) {
   // `params` is a Promise in Next.js 15+ because route params are now async.
@@ -34,10 +44,7 @@ export default async function LabActivity({ params }: ParamProps) {
 
   // Look up the MDX file that matches this category + slug combination.
   // Returns null if no matching file exists on disk.
-  const post = getPostBySlug(
-    category,
-    slug
-  );
+  const post = getPostBySlug(category, slug);
 
   // If getPostBySlug returned null (file not found), hand off to Next.js's
   // built-in 404 handler. `notFound()` throws internally, so nothing after
