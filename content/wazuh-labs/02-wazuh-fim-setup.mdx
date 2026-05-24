@@ -299,9 +299,4 @@ The configuration was then extended to reflect a tiered monitoring strategy alig
 
 During testing, an operational limitation was identified on the Windows lab VM where broad Tier 3 monitoring introduced enough filesystem overhead to interfere with efficient FIM operation. As a result, the Tier 3 Windows paths were removed, reinforcing the importance of balancing visibility with endpoint performance when designing FIM policies.
 
-Future improvements to this lab environment may include:
-
-- Integrating Sysmon on the Windows agent to correlate FIM events with process telemetry
-- Writing custom Wazuh detection rules that trigger on specific FIM patterns, such as a new executable appearing in a Startup directory
-- Simulating specific MITRE ATT&CK techniques such as T1547 (Boot/Logon Autostart) and observing how FIM surfaces them
-- Adding a network device or cloud workload as a third agent type to extend FIM coverage beyond the current two-endpoint environment
+The next lab in this series covers brute force and credential stuffing detection, extending the monitoring scope from filesystem changes to authentication events — observing how Wazuh surfaces repeated failed login attempts and maps them to relevant MITRE ATT&CK techniques.
