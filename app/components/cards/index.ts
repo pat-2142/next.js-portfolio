@@ -6,3 +6,4 @@ export { default as EducationCard } from './EducationCard';
 export { default as ContactCard } from './ContactCard';
 export { default as ProjectCard } from './ProjectCard';
 export { default as LabCard } from './LabCard';
+export { default as PrivacyCard } from './PrivacyCard';

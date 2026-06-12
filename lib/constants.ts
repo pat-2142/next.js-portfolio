@@ -85,3 +85,21 @@ export const MOTION_DIRECTION_MAP = {
 } as const;
 
 export const MOTION_DURATION = 0.5;
+
+// ─── Consent ──────────────────────────────────────────────────────────────────
+// Controls how analytics consent is stored and defaulted.
+// CONSENT_STORAGE_KEY is the localStorage key used by the consent helpers in
+// utils.ts. CONSENT_DEFAULT is what the app falls back to before the user has
+// made any decision — deliberately "undecided" so GA4 never loads silently.
+export const CONSENT = {
+  storageKey: "analytics_consent",
+  default: "undecided",
+} as const;
+
+// ─── GA4 ──────────────────────────────────────────────────────────────────────
+// Measurement ID for Google Analytics 4.
+// The actual value is read from the environment variable at runtime.
+// Set NEXT_PUBLIC_GA_MEASUREMENT_ID in your .env.local file.
+export const GA4 = {
+  measurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "",
+} as const;

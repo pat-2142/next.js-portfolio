@@ -136,3 +136,20 @@ export type ParamProps = {
       slug: string;
     }>;
   };
+
+  // ─── Consent ──────────────────────────────────────────────────────────────────
+// Represents the three possible states of the user's analytics consent
+// decision. This type is used by the consent context, banner component,
+// and localStorage helpers throughout the app.
+//
+//   undecided → user has not yet made a choice (banner should be shown)
+//   accepted  → user opted in  (GA4 should load)
+//   declined  → user opted out (GA4 must not load)
+export type ConsentStatus = "undecided" | "accepted" | "declined";
+
+// Props for the ConsentBanner component.
+// `onClose` is called when the user makes a decision (accept or decline)
+// so the banner can be dismissed after the consent state is updated.
+export interface ConsentBannerProps {
+  onClose: () => void;
+}

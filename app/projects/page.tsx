@@ -3,7 +3,7 @@
 // Uses buildPageTitle from utils to keep the title format consistent with the
 // template defined in layout.tsx ("%s | Phatsimo Pheko").
 import ProjectCard from "../components/cards/ProjectCard";
-import MotionWrapper from "../components/ui/MotionWrapper";
+import MotionWrapper from "../components/wrappers/MotionWrapper";
 import { Metadata } from "next";
 import { buildPageTitle } from "@/lib/utils";
 

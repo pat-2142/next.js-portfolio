@@ -2,7 +2,6 @@
 // Pure helper functions — no React, no JSX, no side effects.
 // Any file in the project can import from here safely.
 
-import { SITE } from "./constants";
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";

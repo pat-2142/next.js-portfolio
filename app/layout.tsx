@@ -2,16 +2,22 @@
 // Sets global metadata (title template, OG tags, Twitter card) using values
 // from constants so they're never duplicated across files.
 // Also loads the Geist font and renders the persistent Navbar.
+//
+// GA4 is conditionally rendered based on the user's consent decision.
+// The ConsentProvider wraps the body children so that the Footer and
+// ConsentBanner can both read and update consent state via context.
+
 import { Geist } from "next/font/google";
 import { Navbar } from "./components/layout";
+import { Footer } from "./components/layout";
 import "./globals.css";
 import type { Metadata } from "next";
-import { SITE, COLORS } from "@/lib/constants";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import { SITE, COLORS, GA4 } from "@/lib/constants";
+import { ConsentProvider } from "@/lib/context/ConsentContext";
+import ConsentBannerWrapper from "./components/wrappers/ConsentBannerWrapper";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
-  // %s is replaced by each page's own title export (e.g. "Labs & Projects")
   title: {
     template: `%s | ${SITE.name}`,
     default: `${SITE.name} | ${SITE.role}`,
@@ -45,12 +51,17 @@ export default function RootLayout({
         className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8"
         style={{ backgroundColor: COLORS.background }}
       >
-        <header>
-          <Navbar />
-        </header>
-        <main className="mt-25">{children}</main>
+        <ConsentProvider>
+          <header>
+            <Navbar />
+          </header>
+          <main className="mt-25">{children}</main>
+          <footer>
+            <Footer />
+          </footer>
+          <ConsentBannerWrapper />
+        </ConsentProvider>
       </body>
-      <GoogleAnalytics gaId="G-SBK6LSX3BC" />
     </html>
   );
 }
