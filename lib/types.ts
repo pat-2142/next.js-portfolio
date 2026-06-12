@@ -146,10 +146,3 @@ export type ParamProps = {
 //   accepted  → user opted in  (GA4 should load)
 //   declined  → user opted out (GA4 must not load)
 export type ConsentStatus = "undecided" | "accepted" | "declined";
-
-// Props for the ConsentBanner component.
-// `onClose` is called when the user makes a decision (accept or decline)
-// so the banner can be dismissed after the consent state is updated.
-export interface ConsentBannerProps {
-  onClose: () => void;
-}

@@ -8,14 +8,16 @@
 // On change  → if the user previously accepted and now declines, the change
 //              takes full effect on the next page load (GA4 is already running
 //              in the current session). A notice is shown to reflect this.
+//
+// Dismissal is handled entirely by the ConsentContext — calling updateConsent
+// sets showBanner to false automatically. No onClose prop is needed.
 
 "use client";
 
 import { useConsent } from "@/lib/context/ConsentContext";
-import { ConsentBannerProps } from "@/lib/types";
 import { COLORS } from "@/lib/constants";
 
-export default function ConsentBanner({ onClose }: ConsentBannerProps) {
+export default function ConsentBanner() {
   const { consent, updateConsent } = useConsent();
 
   // Whether the user has already made a decision in a previous session.
@@ -25,12 +27,10 @@ export default function ConsentBanner({ onClose }: ConsentBannerProps) {
 
   function handleAccept() {
     updateConsent("accepted");
-    onClose();
   }
 
   function handleDecline() {
     updateConsent("declined");
-    onClose();
   }
 
   return (

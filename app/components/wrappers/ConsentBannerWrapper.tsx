@@ -9,16 +9,19 @@
 // read from context directly. By isolating the context reads here, the root
 // layout stays a server component while GA4 and the banner remain reactive
 // to the user's consent decision.
+//
+// Dismissal is handled entirely by the ConsentContext — calling updateConsent
+// sets showBanner to false automatically. No onClose prop is needed.
 
 "use client";
 
 import { useConsent } from "@/lib/context/ConsentContext";
 import { GA4 } from "@/lib/constants";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { ConsentBanner } from "../ui";
+import ConsentBanner from "../ui/ConsentBanner";
 
 export default function ConsentBannerWrapper() {
-  const { consent, showBanner, updateConsent } = useConsent();
+  const { consent, showBanner } = useConsent();
 
   return (
     <>
@@ -30,7 +33,7 @@ export default function ConsentBannerWrapper() {
       {/* Show the consent banner when undecided on first visit,
           or when the user reopens it via "Cookie Preferences" */}
       {showBanner && (
-        <ConsentBanner onClose={() => updateConsent(consent === "undecided" ? "declined" : consent)} />
+        <ConsentBanner />
       )}
     </>
   );
