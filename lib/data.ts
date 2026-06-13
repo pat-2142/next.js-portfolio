@@ -37,27 +37,40 @@ export const skillsList: SkillProps[] = [
     {
         id: 1,
         domain: "Cybersecurity & SOC Operations",
-        details: "SIEM Deployment & Configuration (Wazuh), Alert Triage, Threat Detection, Log Analysis & Correlation, Security Event Monitoring, Incident Response, Endpoint Security, Vulnerability Management, SOC Operations, Security Reporting"
+        details: [
+            "SIEM Deployment & Configuration (Wazuh)", "Alert Triage", "Threat Detection",
+            "Log Analysis & Correlation", "Security Event Monitoring","Incident Response",
+            "Endpoint Security", "Vulnerability Management", "SOC Operations", "Security Reporting"
+        ]
     },
     {
         id: 2,
         domain: "Cloud & Infrastructure",
-        details: "Oracle Cloud Infrastructure (OCI), Identity & Access Management (IAM), Cloud Security Monitoring, Cloud Observability & Monitoring, Cloud Infrastructure Architecture, OCI Foundations & Associate-level Administration"
+        details: [
+            "Oracle Cloud Infrastructure (OCI)", "Identity & Access Management (IAM)", "Cloud Security Monitoring",
+            "Cloud Observability & Monitoring", "Cloud Infrastructure Architecture", "OCI Foundations & Associate-level Administration"
+        ]
     },
     {
         id: 3,
         domain: "Network Security",
-        details: "Network Security Monitoring, Network Traffic Analysis, SOC Operations Workflow, Threat Detection Lifecycle (Cisco CyberOps)"
+        details: [
+            "Network Security Monitoring", "Network Traffic Analysis", "SOC Operations Workflow", "Threat Detection Lifecycle (Cisco CyberOps)"
+        ]
     },
     {
         id: 4,
         domain: "Web Development",
-        details: "React (Core Concepts & Component Architecture), Next.js Framework, Frontend Development, Portfolio & Web Application Development"
+        details: [
+            "React (Core Concepts & Component Architecture)", "Next.js Framework", "Frontend Development", "Portfolio & Web Application Development"
+        ]
     },
     {
         id: 5,
         domain: "General Technical Skills",
-        details: "Technical Report Writing, IT Consulting, Problem Solving"
+        details: [
+            "Technical Report Writing", "IT Consulting", "Problem Solving"
+        ]
     }
 ]
 

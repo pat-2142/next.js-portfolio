@@ -45,7 +45,7 @@ export interface ExperienceProps {
 export interface SkillProps {
     id: number;
     domain: string;  // Broad category, e.g. "Cloud & Infrastructure"
-    details: string  // Free-form description of specific tools/technologies
+    details: string[];  // Free-form description of specific tools/technologies
 }
 
 export interface CertificateProps {
