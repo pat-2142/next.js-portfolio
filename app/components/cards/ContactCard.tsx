@@ -10,9 +10,10 @@ export default function ContactCard() {
     <SectionWrapper heading="CONTACT">
       <ObjectCard>
         <p>
-          I'm open to cybersecurity consultant roles, SOC analyst positions, and
-          cloud security opportunities — locally in Botswana and remotely. Feel
-          free to reach out via any of the channels below.
+        I’m open to cybersecurity consultant roles, SOC analyst positions, 
+        and cloud security opportunities—both locally in Botswana, 
+        remotely, and internationally, including relocation opportunities. 
+        Feel free to reach out via any of the channels below.
         </p>
         <ul className="ml-6">
           <li className="list-disc">
