@@ -11,8 +11,7 @@ export const experienceList: ExperienceProps[] = [
     responsibilities: [
         "Deployed and configured Wazuh SIEM in a SOC environment, managing agent deployment, log ingestion, and endpoint security monitoring across client infrastructure.",
         "Performed daily alert triage and security event analysis, investigating potential threats, assessing impact, and escalating incidents through defined response workflows.",
-        "Produced independent SecOps reports detailing threat detection findings, alert severity, and remediation recommendations — reducing reliance on external security vendors.",
-        "Authored internal documentation standardizing the security reporting methodology, ensuring consistency and quality across daily incident reports.",
+        "Produced independent SecOps reports detailing threat detection findings, alert severity, and remediation recommendations.",
         "Coordinated incident response workflows with clients during security events including agent disconnections and anomalous endpoint activity.",
         "Monitored client asset health and network security posture continuously, maintaining full endpoint visibility and supporting vulnerability management processes."
     ]
@@ -48,21 +47,21 @@ export const skillsList: SkillProps[] = [
         domain: "Cloud & Infrastructure",
         details: [
             "Oracle Cloud Infrastructure (OCI)", "Identity & Access Management (IAM)", "Cloud Security Monitoring",
-            "Cloud Observability & Monitoring", "Cloud Infrastructure Architecture", "OCI Foundations & Associate-level Administration"
+            "Cloud Observability & Monitoring", "Cloud Infrastructure Architecture", "OCI Foundations", "Associate-level Administration"
         ]
     },
     {
         id: 3,
         domain: "Network Security",
         details: [
-            "Network Security Monitoring", "Network Traffic Analysis", "SOC Operations Workflow", "Threat Detection Lifecycle (Cisco CyberOps)"
+            "Network Security Monitoring", "Network Traffic Analysis", "SOC Operations Workflow", "Threat Detection Lifecycle"
         ]
     },
     {
         id: 4,
-        domain: "Web Development",
+        domain: "Software Engineering",
         details: [
-            "React (Core Concepts & Component Architecture)", "Next.js Framework", "Frontend Development", "Portfolio & Web Application Development"
+            "SDLC", "Application Architecture","React & Next.js", "Secure Coding"
         ]
     },
     {
