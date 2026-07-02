@@ -6,7 +6,7 @@ export default function CertificateCard() {
     return (
         <SectionWrapper heading="CERTIFICATIONS">
             {certificateList.map((certificate) => (
-                <div className="flex flex-wrap justify-start gap-4 lg:max-w-120" key={certificate.id}>
+                <div className="flex flex-wrap justify-start gap-4 lg:max-w-140" key={certificate.id}>
                     <ObjectCard>
                         <h3 className="font-bold">{certificate.title}</h3>
                         <p>{certificate.description}</p>

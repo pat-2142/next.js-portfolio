@@ -23,17 +23,20 @@ export default function HeroCard() {
           className="font-bold text-lg md:text-2xl pb-2"
           style={{ color: COLORS.text }}
         >
-          Cybersecurity Consultant | SIEM (Wazuh) | OCI Certified
+          Cybersecurity Consultant | Aspiring Cloud Security Engineer
         </h1>
         <p>
           Cybersecurity consultant based in Botswana with hands-on experience in
           SOC operations, SIEM deployment, and cloud security. I manage endpoint
           monitoring using Wazuh, coordinate incident response workflows, and
-          produce security analysis reports — including authoring the internal
-          documentation that standardizes how those reports are structured. I
-          hold three OCI 2025 certifications reflecting a deliberate focus on
-          cloud security, and I'm actively building toward a career at the
-          intersection of security operations and cloud infrastructure.
+          produce security analysis report. I hold three OCI 2025 certifications
+          reflecting a deliberate focus on cloud security. My background also
+          includes full-cycle software development — from requirements and
+          architecture through to deployment and maintenance — giving me a
+          practical understanding of how applications are built, which sharpens
+          how I assess and secure them. I'm building toward a career at the
+          intersection of security operations, cloud infrastructure, and application
+          security.
         </p>
         <div className="flex gap-3 mt-5">
           <PrimaryButton label="VISIT LINKEDIN" href={CONTACT.linkedin} target="_blank" />
