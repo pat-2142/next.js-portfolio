@@ -97,7 +97,7 @@ export default async function LabActivity({ params }: ParamProps) {
                 <MDXRemote source={post.content} components={components} />
               </div>
               <div className="flex gap-2 pt-4">
-                <PrimaryButton href={"/labs"} label="BACK TO LABS" />
+                <PrimaryButton href={`/labs/${category}`} label="BACK TO LAB SERIES" />
               </div>
             </div>
         </div>

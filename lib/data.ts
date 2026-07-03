@@ -1,4 +1,4 @@
-import { CertificateProps, EducationProps, ExperienceProps, ProjectProps, SkillProps } from "./types";
+import { CertificateProps, EducationProps, ExperienceProps, ProjectProps, SkillProps, LabSeriesProps } from "./types";
 
 export const experienceList: ExperienceProps[] = [
   {
@@ -151,5 +151,19 @@ export const projectList: ProjectProps[] = [
         ],
         liveLink: "https://phatsimopheko.com",
         repoLink: "https://github.com/pat-2142/next.js-portfolio"
+    }
+]
+
+export const labSeriesList: LabSeriesProps[] = [
+    {
+        id: 1,
+        title: "Building a Production-Grade SOC: A Wazuh Lab Series",
+        description: "A hands-on series documenting the build of a production-grade SOC using Wazuh — covering deployment, detection engineering, alerting, and incident response, one lab at a time.",
+        link: "/labs/wazuh-labs",
+        tags: [
+            "SIEM",
+            "SOC OPERATIONS",
+            "DETECTION ENGINEERING"
+        ],     
     }
 ]

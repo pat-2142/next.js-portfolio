@@ -80,6 +80,17 @@ export interface ProjectProps {
     repoLink: string;        // URL to the GitHub (or similar) repository
 }
 
+// Represents a single lab series card on the labs page (e.g. a Wazuh or OCI
+// series). Used to loop through and render each series as a summary card
+// linking out to its full write-up.
+export interface LabSeriesProps {
+    id: number;
+    title: string;        // Name of the lab series, e.g. "Wazuh Labs"
+    description: string;  // Short summary of what the series covers
+    link: string;         // URL or route to the lab series' landing/index page
+    tags: string[];
+}
+
 // ─── Animation wrapper ────────────────────────────────────────────────────────
 // Props for a motion/animation wrapper component (likely using Framer Motion).
 // `direction` controls which axis the element slides in from on mount.

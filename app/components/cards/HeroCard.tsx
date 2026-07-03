@@ -40,7 +40,7 @@ export default function HeroCard() {
         </p>
         <div className="flex gap-3 mt-5">
           <PrimaryButton label="VISIT LINKEDIN" href={CONTACT.linkedin} target="_blank" />
-          <SecondaryButton label="VIEW PROJECTS" href="/projects" />
+          <SecondaryButton label="VIEW LABS" href="/labs" />
         </div>
       </div>
 

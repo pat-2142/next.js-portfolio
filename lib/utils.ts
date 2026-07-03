@@ -49,7 +49,7 @@ const CONTENT_PATH = path.join(
 //
 // This function is intentionally private (no `export`) — callers should use
 // the named category helpers below (e.g. getWazuhLabs) instead.
-function getPostsByCategory(category: string): MdxData[] {
+export function getPostsByCategory(category: string): MdxData[] {
   const categoryPath = path.join(
     CONTENT_PATH,
     category

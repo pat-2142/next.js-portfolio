@@ -41,7 +41,7 @@ export const CONTACT = {
 export const NAV_LINKS = [
   { label: "HOME", href: "/" },
   { label: "LABS", href: "/labs" },
-  { label: "PROJECTS", href: "/projects" },
+  { label: "OTHER WORK", href: "/otherwork" },
 ] as const;
 
 // ─── CV download ──────────────────────────────────────────────────────────────
