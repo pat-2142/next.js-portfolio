@@ -16,15 +16,9 @@ export default function HeroCard() {
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <SectionWrapper>
+    <SectionWrapper heading="Cybersecurity Consultant | Aspiring Cloud Security Engineer">
       {/* ── Bio column ── */}
       <div className="flex flex-1 flex-col">
-        <h1
-          className="font-bold text-lg md:text-2xl pb-2"
-          style={{ color: COLORS.text }}
-        >
-          Cybersecurity Consultant | Aspiring Cloud Security Engineer
-        </h1>
         <p>
           Cybersecurity consultant based in Botswana with hands-on experience in
           SOC operations, SIEM deployment, and cloud security. I manage endpoint
