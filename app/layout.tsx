@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import { SITE, COLORS, GA4 } from "@/lib/constants";
 import { ConsentProvider } from "@/lib/context/ConsentContext";
 import ConsentBannerWrapper from "./components/wrappers/ConsentBannerWrapper";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
