@@ -1,0 +1,224 @@
+---
+title: "Lab 04: Windows Security Telemetry Engineering"
+description: "Deploying PowerShell logging and Sysmon alongside existing Security and System telemetry, then using a single controlled trigger to compare what each Windows telemetry source actually reveals — and what it misses."
+date: "2026-07-21"
+---
+
+## Introduction
+
+Lab 03 relied on a single Windows telemetry source: the Security event log, specifically Event ID 4625 for failed logon attempts. That was sufficient to detect brute force and credential stuffing activity, but it represents only one slice of what a Windows endpoint can tell an analyst. A host under investigation produces telemetry across several overlapping but distinct sources — authentication events, system-level state changes, command execution content, and process-level behaviour — and each source has a different blind spot.
+
+This lab moves beyond the Security log to establish the rest of that telemetry landscape: the System log, PowerShell logging (Module Logging and Script Block Logging), and Sysmon. Rather than treating this as a checklist of "turn on more logging," the goal was to generate a single controlled action and trace how — or whether — it appeared across all four sources, to build an evidence-based picture of what each source is actually for.
+
+The objective of this lab was to:
+- Audit the current Windows agent telemetry baseline following an environment rebuild
+- Enable PowerShell Module Logging and Script Block Logging
+- Deploy Sysmon with a baseline configuration
+- Forward all new telemetry sources to Wazuh
+- Execute a single controlled trigger — an encoded PowerShell command — and compare how Security, System, PowerShell, and Sysmon each recorded it
+- Identify where Wazuh's default alert visibility diverges from the underlying telemetry actually being collected
+
+## Lab Environment
+
+Since Lab 03, the original i3 laptop housing the Linux and Windows agents was lost, and the environment has been consolidated onto a single i3-6006U host. This host was upgraded with a 512GB SSD to address the HDD-related I/O bottleneck noted in Lab 03. The Linux agent was rebuilt as a VM on this host, and the existing Windows machine was re-enrolled as the Windows agent.
+
+A notable constraint surfaced during this lab: the Windows host runs **Windows 10 Home edition**, which does not include the Local Group Policy Editor (`gpedit.msc`). Both PowerShell logging policies in this lab were therefore configured directly via the registry keys that Group Policy would otherwise manage — functionally identical in outcome, but worth noting as an environment-specific adaptation.
+
+## Part 1 — Baseline Audit
+
+Before making any changes, the Windows agent's `ossec.conf` was reviewed to establish what was already being collected, given the time elapsed since earlier labs and the hardware rebuild.
+
+The following `<localfile>` blocks were already present:
+
+```xml
+<localfile>
+  <location>Application</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+<localfile>
+  <location>Security</location>
+  <log_format>eventchannel</log_format>
+  <query>Event/System[EventID != 5145 and EventID != 5156 and EventID != 5447 and
+    EventID != 4656 and EventID != 4658 and EventID != 4663 and EventID != 4660 and
+    EventID != 4670 and EventID != 4690 and EventID != 4703 and EventID != 4907 and
+    EventID != 5152 and EventID != 5157]</query>
+</localfile>
+<localfile>
+  <location>System</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+<localfile>
+  <location>active-response\active-responses.log</location>
+  <log_format>syslog</log_format>
+</localfile>
+```
+
+Security, System, and Application were already configured — Security carried over from Lab 03, while System and Application appear to be included in Wazuh's default Windows agent template. Neither PowerShell logging nor Sysmon had any presence in the configuration. This narrowed the actual scope of the lab to two genuinely new sources rather than the four originally assumed.
+
+The Linux agent's configuration was also reviewed and found to contain only default command-based monitoring (`df -P`, `netstat`, `last -n 20`) — unrelated to this lab's Windows-focused scope, and left unchanged.
+
+A useful discovery during this audit: the `location` field in Wazuh alerts does not identify which Windows event channel an event came from — it generically reads `EventChannel` for all of them. The actual channel lives under `data.win.system.channel`, and this field was used for all source-specific filtering for the remainder of the lab.
+
+## Part 2 — Enabling PowerShell Logging
+
+### Module Logging
+
+Configured directly via registry, since Windows Home does not support Group Policy:
+
+```powershell
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging" -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging" -Name "EnableModuleLogging" -Value 1
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging\ModuleNames" -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging\ModuleNames" -Name "*" -Value "*"
+```
+
+The wildcard module name logs all modules rather than a restricted list — the appropriate default for a detection-engineering lab, since limiting logging to known modules would blind the environment to unknown or unexpected ones.
+
+Verified locally by running a simple command and confirming an Event ID 4103 entry appeared under `Applications and Services Logs → Microsoft → Windows → PowerShell → Operational`.
+
+![PowerShell Module Logging verification (Event ID 4103)](/images/wazuh-home-lab/04/event-viewer-4103-event.png)
+
+### Script Block Logging
+
+```powershell
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -Name "EnableScriptBlockLogging" -Value 1
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -Name "EnableScriptBlockInvocationLogging" -Value 1
+```
+
+This is the setting that captures the actual textual content of scripts and commands as they execute, including automatic decoding of base64-encoded commands — the capability this lab's controlled trigger depends on.
+
+Verified with a test string, confirming Event ID 4104 appeared with the literal command text visible in the message body.
+
+![PowerShell Script Block Logging test showing decoded command text](/images/wazuh-home-lab/04/event-viewer-script-block-test.png)
+
+## Part 3 — Forwarding PowerShell Telemetry to Wazuh
+
+A new `<localfile>` block was added to `ossec.conf`:
+
+```xml
+<localfile>
+  <location>Microsoft-Windows-PowerShell/Operational</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+```
+
+The Wazuh agent service was restarted to apply the change.
+
+### An unexpected finding: alert visibility is not the same as telemetry presence
+
+Initial validation ran a `Get-Process` command, which appeared in the Wazuh dashboard as expected. A follow-up test running `Write-Host "Lab 04 script block logging test"` generated a confirmed Event ID 4104 entry locally in Event Viewer. While some PowerShell events did surface in the dashboard (as shown in the PowerShell channel results), many low-severity or specific script block events did not trigger alerts.
+
+![PowerShell events in the Wazuh dashboard](/images/wazuh-home-lab/04/wazuh-powershell-results.png)
+
+The explanation: Wazuh's dashboard surfaces only events that match a rule in the ruleset at a sufficient severity level. Some commands (like `Get-Process`) matched existing rules, but others — especially certain verbose script block events — did not and were omitted from the alerts view even though the telemetry was received.
+
+This is a significant finding in its own right: **the presence of telemetry and its visibility to an analyst are two different things.** A verbose, benign-looking script block event is exactly the kind of activity a low-and-slow attacker might rely on to avoid appearing in a default alerts view — a gap that default rule tuning and custom detection logic (the subject of later labs in this series) exist to close.
+
+## Part 4 — Sysmon Deployment
+
+### Configuration
+
+A baseline configuration was used rather than running Sysmon unconfigured, which would produce excessive and undocumented noise. SwiftOnSecurity's configuration was selected over more comprehensive alternatives (such as Olaf Hartong's) given the constrained hardware profile of the lab host.
+
+```powershell
+New-Item -Path "C:\Sysmon" -ItemType Directory
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml" -OutFile "C:\Sysmon\sysmonconfig.xml"
+```
+
+### Installation
+
+```powershell
+Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Sysmon.zip" -OutFile "C:\Sysmon\Sysmon.zip"
+Expand-Archive -Path "C:\Sysmon\Sysmon.zip" -DestinationPath "C:\Sysmon"
+cd C:\Sysmon
+.\Sysmon64.exe -accepteula -i sysmonconfig.xml
+```
+
+Confirmed running via `Get-Service -Name Sysmon64`.
+
+### Forwarding to Wazuh
+
+```xml
+<localfile>
+  <location>Microsoft-Windows-Sysmon/Operational</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+```
+
+Following an agent restart, a test process launch (`notepad.exe`) confirmed Sysmon Event ID 1 entries reaching both Event Viewer and the Wazuh dashboard without the alert-visibility gap seen with PowerShell logging — Sysmon's default ruleset proved considerably more willing to surface events as alerts, a distinction that became directly relevant in Part 5.
+
+![Sysmon events in the Wazuh dashboard](/images/wazuh-home-lab/04/wazuh-sysmon-results.png)
+
+## Part 5 — Controlled Trigger and Cross-Source Comparison
+
+To compare the four telemetry sources against a single point of ground truth, one deliberate action was executed and then traced across Security, System, PowerShell Operational, and Sysmon.
+
+### The Trigger
+
+A base64-encoded PowerShell command — a classic living-off-the-land execution pattern — was chosen because it produces meaningfully different visibility depending on which telemetry source is examined.
+
+```powershell
+$command = 'Get-LocalUser | Select-Object Name'
+$bytes = [System.Text.Encoding]::Unicode.GetBytes($command)
+$encoded = [Convert]::ToBase64String($bytes)
+```
+
+The resulting encoded string was then executed as the actual trigger:
+
+```powershell
+powershell.exe -EncodedCommand RwBlAHQALQBMAG8AYwBhAGwAVQBzAGUAcgAgAHwAIABTAGUAbABlAGMAdAAtAE8AYgBqAGUAYwB0ACAATgBhAG0AZQA=
+```
+
+The command executed successfully and returned the expected local usernames, confirming this is a functional technique rather than a purely theoretical one. The trigger ran at **13:35:04–13:35:05 UTC**, which was used as the reference point across all four sources.
+
+![Event Viewer showing the encoded command execution](/images/wazuh-home-lab/04/event-viewer-encoded-command.png)
+
+### Source-by-Source Results
+
+**Security log** — No rule-matched event was found in the Wazuh dashboard for this action. A local, non-network process spawn of this kind does not fall within the scope of what the Security log's default auditing policy captures in this environment.
+
+**System log** — Silent, as expected. Process execution is outside this log's scope; it is oriented toward service and driver state changes.
+
+**PowerShell Operational** — Some events from this channel appeared in the Wazuh dashboard (as seen in the dedicated PowerShell results view), but the specific Event ID 4104 for the controlled trigger did not trigger a visible alert, consistent with the alert-visibility gap identified in Part 3. However, the underlying Event ID 4104 was confirmed locally in Event Viewer, and its message body showed the **fully decoded** script content — `Get-LocalUser | Select-Object Name` — rather than the base64 string that was actually typed on the command line.
+
+![Get-LocalUser command event in Event Viewer](/images/wazuh-home-lab/04/event-viewer-get-local-user-command.png)
+
+**Sysmon** — Produced two alerts in the Wazuh dashboard:
+- **Rule 92057 (level 12)** — a Process Create event (Event ID 1) correctly identifying a PowerShell process spawning a child PowerShell process executing a base64-encoded command, mapped to **T1059.001** under the Execution tactic. The full command line was captured, including the `-EncodedCommand` flag and payload — but the payload itself remained encoded in Sysmon's data, since Sysmon logs the literal command line as invoked rather than decoding it.
+- **Rule 92213 (level 15)** — a File Create event (Event ID 11) flagged as "executable file dropped in folder commonly used by malware," mapped to **T1105 — Ingress Tool Transfer**. Investigation of the target filename (`__PSScriptPolicyTest_....ps1`) identified this as a benign, known PowerShell internal artifact generated automatically when Script Block Logging evaluates a script — not an actual malicious file drop. This is a genuine false positive produced by Sysmon's default ruleset, triggered purely as a side effect of running an encoded command.
+
+![Sysmon events in Event Viewer](/images/wazuh-home-lab/04/event-viewer-sysmon.png)
+
+## Comparison Summary
+
+**Security**: No alert in the Wazuh dashboard. This source provided no visibility into the local process spawn.
+
+**System**: No alert, and no relevant events. Process execution falls outside its scope.
+
+**PowerShell Operational**: Some PowerShell events appeared in the dashboard, but the specific script block event for the controlled trigger did not trigger a visible alert (due to the visibility gap). The underlying telemetry existed and uniquely revealed the fully decoded command content (`Get-LocalUser | Select-Object Name`).
+
+**Sysmon**: Two alerts appeared. It correctly captured the process creation and full (encoded) command line with ancestry. It also generated one false-positive alert on a benign PowerShell internal artifact.
+
+## MITRE ATT&CK Mapping
+
+The controlled trigger in this lab maps to **T1059.001 — PowerShell**, under the Execution tactic, correctly identified by Sysmon's rule 92057. This reflects the use of PowerShell as a command and script execution engine — a foundational technique used across a wide range of post-exploitation activity, independent of what the specific command being run actually does.
+
+The false-positive alert (rule 92213) mapped to **T1105 — Ingress Tool Transfer** under Command and Control, which does not reflect the actual behaviour observed. No tool was transferred into the environment; the flagged file was a transient artifact of PowerShell's own script evaluation process. This mismatch is a useful illustration of a broader principle in detection engineering: a rule mapped to a MITRE technique is only as accurate as the underlying logic that triggers it, and default rulesets can misattribute benign system behaviour to a specific adversary technique when the triggering condition (a file dropped in a temp directory) is not sufficiently specific.
+
+## Lessons Learned
+
+- Telemetry presence and alert visibility are not the same thing. Both PowerShell Operational and Security events were confirmed to exist for the controlled trigger, yet neither appeared in the Wazuh dashboard, because default rule severity thresholds gate what reaches the analyst's view. An analyst relying solely on the alerts dashboard would have no visibility into this activity from those two sources.
+- Sysmon and PowerShell logging are complementary rather than redundant. Sysmon reveals that an encoded command executed and its process lineage, but the payload itself remains encoded in Sysmon's data. PowerShell Script Block Logging is the only source in this lab that revealed the actual decoded content of the command. Relying on either source alone would leave a meaningful gap.
+- Default Sysmon rules can produce confident, high-severity, MITRE-mapped false positives. Rule 92213 fired at level 15 and cited T1105 for a benign PowerShell-generated temp file — a reminder that alert severity and MITRE mapping do not by themselves guarantee accuracy, and that default rulesets require validation against ground truth before being trusted at face value.
+- Windows Home's lack of Group Policy support is a manageable constraint, not a blocker. Every setting normally configured via `gpedit.msc` has a direct registry equivalent, since Group Policy ultimately writes to the same keys.
+- Auditing the existing configuration before making changes revealed that System and Application logging were already present by default, narrowing the actual scope of new work required and avoiding redundant configuration effort.
+- The `location` field in Wazuh alerts does not distinguish between Windows event channels — all eventchannel-sourced alerts report `location: EventChannel`. The channel itself is identified via `data.win.system.channel`, which proved essential for any source-specific filtering in this lab and going forward.
+
+## Conclusion
+
+This lab extended the Windows telemetry footprint established in Lab 03 beyond the Security log alone, adding PowerShell Module and Script Block Logging and a Sysmon deployment, and forwarding both to Wazuh alongside the pre-existing Security and System sources.
+
+Rather than describing each source's capabilities in the abstract, a single controlled trigger — an encoded PowerShell command — was executed and traced across all four sources. The results showed that visibility varies considerably by source: Security and System stayed silent, PowerShell logging captured the decoded command content (with some events visible in the dashboard but the specific trigger not alerting), and Sysmon alerted twice — once correctly identifying the encoded execution pattern, and once as a false positive tied to a benign internal artifact.
+
+The central finding of this lab is that telemetry existing and telemetry being visible to an analyst are two distinct properties, governed by whether a rule exists to surface a given event at a given severity. This finding, along with the concrete false-positive example produced by Sysmon's default ruleset, sets up the next phase of this series directly: Lab 05 moves into custom detection rule engineering, building on the specific visibility gaps and false-positive patterns identified here rather than treating detection tuning as an abstract exercise.
