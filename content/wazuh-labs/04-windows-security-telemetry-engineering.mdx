@@ -185,15 +185,15 @@ powershell.exe -EncodedCommand RwBlAHQALQBMAG8AYwBhAGwAVQBzAGUAcgAgAHwAIABTAGUAb
 
 The command executed successfully and returned the expected local usernames, confirming this is a functional technique rather than a purely theoretical one. The trigger ran at **15:35:04–15:35:05 CAT**, which was used as the reference point across all four sources.
 
-![Event Viewer confirmation of the encoded command execution](/images/wazuh-home-lab/04/event-viewer-encoded-command.png)
-
 ### Source-by-Source Results
 
 **Security log** — No rule-matched event was found in the Wazuh dashboard for this action. A local, non-network process spawn of this kind does not fall within the scope of what the Security log's default auditing policy captures in this environment.
 
 **System log** — Silent, as expected. Process execution is outside this log's scope; it is oriented toward service and driver state changes.
 
-**PowerShell Operational** — No alert appeared in the Wazuh dashboard for this specific event, consistent with the alert-visibility gap identified in Part 3. However, the underlying Event ID 4104 was confirmed locally in Event Viewer, and its message body showed the **fully decoded** script content — `Get-LocalUser | Select-Object Name` — rather than the base64 string that was actually typed on the command line.
+**PowerShell Operational** — No alert appeared in the Wazuh dashboard for this specific event, consistent with the alert-visibility gap identified in Part 3. Locally in Event Viewer, however, the picture was more complete than a single event: with Script Block Invocation Logging enabled, PowerShell generated **two separate Event ID 4104 entries** for this one trigger — one capturing the command line as literally invoked, including the base64 string, and a second capturing the **fully decoded** script content, `Get-LocalUser | Select-Object Name`. So the encoded string itself was present in Event Viewer; the meaningful gap wasn't that PowerShell logging failed to show the raw command, but that it also captured the decoded intent behind it — content that neither Security, System, nor Sysmon exposed anywhere in their own data.
+
+![Event Viewer confirmation of the encoded command execution](/images/wazuh-home-lab/04/event-viewer-encoded-command.png)
 
 ![Event Viewer showing the decoded PowerShell command content](/images/wazuh-home-lab/04/event-viewer-get-local-user-command.png)
 
@@ -206,7 +206,7 @@ The command executed successfully and returned the expected local usernames, con
 
 Put side by side, the four sources produced four distinct outcomes for the exact same action. The Security log produced no rule-matched event at all — a local, non-network process spawn of this kind falls outside what its default auditing policy captures in this environment. The System log was similarly silent, which is expected, since process execution is outside its scope entirely.
 
-PowerShell Operational sat in the middle: the underlying event existed and was confirmed locally in Event Viewer, but it did not surface as an alert in the Wazuh dashboard, since it didn't match any rule severe enough to be indexed. Where it earned its place, however, was in content — it was the only source that revealed the fully decoded script text rather than the encoded string actually typed on the command line.
+PowerShell Operational sat in the middle: both events existed and were confirmed locally in Event Viewer, but neither surfaced as an alert in the Wazuh dashboard, since neither matched a rule severe enough to be indexed. Where it earned its place was in content — it was the only source that captured the raw command line and the fully decoded script text as separate events, giving a complete picture of both what was typed and what it actually meant.
 
 Sysmon was the only source that produced a dashboard alert, and it produced two: one correct detection capturing the full command line and process ancestry, and one false positive misattributing a benign internal artifact to a Command and Control technique. Sysmon was also the most complete on process-level detail, but its command line data stayed encoded — it recorded that an encoded command ran, without revealing what that command actually did.
 
@@ -223,7 +223,7 @@ The false-positive alert (rule 92213) mapped to **T1105 — Ingress Tool Transfe
 ## Lessons Learned
 
 - Telemetry presence and alert visibility are not the same thing. Both PowerShell Operational and Security events were confirmed to exist for the controlled trigger, yet neither appeared in the Wazuh dashboard, because default rule severity thresholds gate what reaches the analyst's view. An analyst relying solely on the alerts dashboard would have no visibility into this activity from those two sources.
-- Sysmon and PowerShell logging are complementary rather than redundant. Sysmon reveals that an encoded command executed and its process lineage, but the payload itself remains encoded in Sysmon's data. PowerShell Script Block Logging is the only source in this lab that revealed the actual decoded content of the command. Relying on either source alone would leave a meaningful gap.
+- Sysmon and PowerShell logging are complementary rather than redundant. Sysmon reveals that an encoded command executed and its process lineage, but the payload itself remains encoded in Sysmon's data. PowerShell Script Block Logging, with invocation logging enabled, generated two separate 4104 events for a single encoded command — one showing the raw invocation and one showing the fully decoded script — making it the only source in this lab that connected the encoded string to what it actually did. Relying on either source alone would leave a meaningful gap.
 - Default Sysmon rules can produce confident, high-severity, MITRE-mapped false positives. Rule 92213 fired at level 15 and cited T1105 for a benign PowerShell-generated temp file — a reminder that alert severity and MITRE mapping do not by themselves guarantee accuracy, and that default rulesets require validation against ground truth before being trusted at face value.
 - Windows 10 Home's lack of Group Policy support is a manageable constraint, not a blocker. Every setting normally configured via `gpedit.msc` has a direct registry equivalent, since Group Policy ultimately writes to the same keys.
 - Auditing the existing configuration before making changes revealed that System and Application logging were already present by default, narrowing the actual scope of new work required and avoiding redundant configuration effort.
@@ -234,6 +234,6 @@ The false-positive alert (rule 92213) mapped to **T1105 — Ingress Tool Transfe
 
 This lab extended the Windows telemetry footprint established in Lab 03 beyond the Security log alone, adding PowerShell Module and Script Block Logging and a Sysmon deployment, and forwarding both to Wazuh alongside the pre-existing Security and System sources.
 
-Rather than describing each source's capabilities in the abstract, a single controlled trigger — an encoded PowerShell command — was executed and traced across all four sources. The results showed that visibility varies considerably by source: Security and System stayed silent, PowerShell logging captured the decoded command content but did not surface as a dashboard alert, and Sysmon alerted twice — once correctly identifying the encoded execution pattern, and once as a false positive tied to a benign internal artifact.
+Rather than describing each source's capabilities in the abstract, a single controlled trigger — an encoded PowerShell command — was executed and traced across all four sources. The results showed that visibility varies considerably by source: Security and System stayed silent, PowerShell logging captured both the raw and decoded command content but did not surface as a dashboard alert, and Sysmon alerted twice — once correctly identifying the encoded execution pattern, and once as a false positive tied to a benign internal artifact.
 
 The central finding of this lab is that telemetry existing and telemetry being visible to an analyst are two distinct properties, governed by whether a rule exists to surface a given event at a given severity. This finding, along with the concrete false-positive example produced by Sysmon's default ruleset, sets up the next phase of this series directly: Lab 05 moves into custom detection rule engineering, building on the specific visibility gaps and false-positive patterns identified here rather than treating detection tuning as an abstract exercise.
