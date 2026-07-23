@@ -56,7 +56,10 @@ export default function RootLayout({
           <header>
             <Navbar />
           </header>
-          <main className="mt-25">{children}</main>
+          <main className="mt-25">
+            {children}
+            <Analytics />
+          </main>
           <footer>
             <Footer />
           </footer>
