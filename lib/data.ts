@@ -158,7 +158,7 @@ export const labSeriesList: LabSeriesProps[] = [
     {
         id: 1,
         title: "Building a Production-Grade SOC: A Wazuh Lab Series",
-        description: "A hands-on series documenting the build of a production-grade SOC using Wazuh — covering deployment, detection engineering, alerting, and incident response, one lab at a time.",
+        description: "A hands-on, planned 20+ part series documenting the build of a production-grade SOC using Wazuh—covering deployment, detection engineering, alerting, and incident response, one lab at a time.",
         link: "/labs/wazuh-labs",
         tags: [
             "SIEM",
