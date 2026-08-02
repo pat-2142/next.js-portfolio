@@ -1,0 +1,158 @@
+---
+title: "Lab 05: Custom Detection Rule Engineering"
+description: "Writing custom Wazuh correlation rules to detect cross-username credential stuffing on Linux and Windows, closing the detection gap identified in Lab 03."
+date: "2026-07-31"
+---
+
+## Introduction
+
+Lab 03 identified a real gap in Wazuh's default authentication-failure ruleset: both the Linux (`5712`) and Windows (`60204`) aggregation rules key off source IP and raw failure volume, with no dimension for *which accounts* are being targeted. Credential stuffing — many usernames, each tried only a handful of times from the same source — only got flagged in that lab because the simulated attack happened to generate enough total volume to cross the existing thresholds anyway. A more disciplined attacker, spreading the same number of attempts thinly across more accounts, would have stayed invisible.
+
+This lab closes that gap by writing custom correlation rules that detect the pattern directly — five or more distinct usernames failing authentication from the same source within a defined window — independent of total volume. Objectives:
+
+- Design and deploy custom Wazuh rules for both Linux (`sshd`) and Windows (Security Event Log) telemetry
+- Validate the rules using `wazuh-logtest` before touching live traffic
+- Reproduce Lab 03's original attacks for direct before/after comparison
+- Run a deliberately low-volume, high-account-diversity attack variant to prove the specific gap is closed
+- Document what didn't work as expected along the way — several assumptions made during rule design didn't survive contact with real Wazuh internals, and those findings turned out to be as valuable as the parts that worked cleanly
+
+## Lab Environment
+
+No hardware or topology changes since Lab 04 — still the single i3-6006U host running the Wazuh manager, indexer, and dashboard together, with the Xubuntu Linux agent and the physical Windows 10 Home machine as agents, and the Ubuntu Server attacker VM (Hydra) recreated for this lab's attack simulations.
+
+One environment note worth flagging: `userlist.txt` and `wordlist.txt` on the attacker VM, at the time of this lab's testing, contained 10 usernames and 15 passwords respectively — smaller than the 15/20 referenced in Lab 03. The reason for the discrepancy wasn't tracked down; what matters for comparability is that both rules were tested against the same files consistently within this lab.
+
+## Part 1 — Identifying the Correlation Primitive
+
+Wazuh's rule engine supports correlation options beyond simple frequency counting. The two relevant here:
+
+- `same_srcip` / `same_field` — require matched events to share a common field value
+- `different_user` / `different_srcuser` / `different_field` — require each newly counted event's value (for a specified field) to differ from prior matched events
+
+Combined with `if_matched_sid`, `frequency`, and `timeframe`, this gives a way to say: *N events, from the same source, with N distinct values in some other field, within a time window* — exactly the shape of cross-username credential stuffing.
+
+## Part 2 — Designing and Validating the Linux Rule
+
+First draft used `<same_srcip />` and `<different_user />` against base rule `5710` (sshd invalid-user failure). Running this through `wazuh-logtest` immediately surfaced a problem:
+
+```
+Jul 30 14:22:07 xubuntu-agent sshd[12345]: Failed password for invalid user admin from 192.168.100.50 port 51000 ssh2
+
+**Phase 2: Completed decoding.
+        name: 'sshd'
+        parent: 'sshd'
+        srcip: '192.168.100.50'
+        srcuser: 'admin'
+```
+
+The sshd decoder populates `srcuser`, not the generic `user` field `different_user` correlates on. Corrected to `different_srcuser`:
+
+```xml
+<rule id="100050" level="12" frequency="5" timeframe="120">
+  <if_matched_sid>5710</if_matched_sid>
+  <same_srcip />
+  <different_srcuser />
+  <description>sshd: Credential stuffing suspected - 5+ distinct usernames targeted from the same source IP within 120 seconds</description>
+  <mitre><id>T1110.004</id></mitre>
+  <group>authentication_failures,credential_stuffing,</group>
+</rule>
+```
+
+Feeding five distinct usernames (`admin`, `root`, `deploy`, `devops`, `backup`), same source IP, one at a time into the same `wazuh-logtest` session confirmed the rule firing correctly on the fifth:
+
+```
+**Phase 3: Completed filtering (rules).
+        id: '100050'
+        level: '12'
+        description: 'sshd: Credential stuffing suspected - 5+ distinct usernames targeted from the same source IP within 120 seconds'
+        mitre.id: '['T1110.004']'
+        mitre.tactic: '['Credential Access']'
+        mitre.technique: '['Credential Stuffing']'
+**Alert to be generated.
+```
+
+Two negative tests were also run to check the rule fails safe: a sequence with one repeated username (`admin, admin, root, deploy, devops`) fired unexpectedly, while a sequence alternating just two usernames (`admin, root, admin, root, admin`) did not fire at all. These two results are not fully consistent with either a simple "adjacent-pair" or "global distinctness" model of how `different_srcuser` tracks state — the exact semantics were not fully resolved from documentation or testing alone. Rather than continue reverse-engineering `analysisd`'s internals, live-traffic testing was treated as the authoritative validation instead, per the approach below.
+
+## Part 3 — Designing and Validating the Windows Rule
+
+The Windows equivalent needed its own investigation. Windows EventChannel-sourced logs (the `location: EventChannel` quirk noted in earlier labs) decode source IP into a *dynamic* field, `win.eventdata.ipAddress` — not the static `srcip` field that `same_srcip` reads. Confirmed via Wazuh's own community documentation: there is no supported mapping from EventChannel's IP field to `srcip` without switching collection methods entirely.
+
+The fix was Wazuh's generic dynamic-field correlator:
+
+```xml
+<rule id="100051" level="12" frequency="5" timeframe="240">
+  <if_matched_sid>60122</if_matched_sid>
+  <same_field>win.eventdata.ipAddress</same_field>
+  <different_field>win.eventdata.targetUserName</different_field>
+  <description>Windows: Credential stuffing suspected - 5+ distinct usernames targeted from the same source within 240 seconds</description>
+  <mitre><id>T1110.004</id></mitre>
+  <group>authentication_failures,credential_stuffing,</group>
+</rule>
+```
+
+Notably, inspecting Wazuh's own built-in `60204` rule after the fact showed it uses this exact same `same_field` approach against `win.eventdata.ipAddress` — independent confirmation that this was the correct primitive, not just a workaround.
+
+## Part 4 — Linux Live Validation
+
+**Noisy run** (reproducing Lab 03's original attack, `hydra -L userlist.txt -P wordlist.txt ssh://<agent-ip> -t 4 -V`): 16 alerts on rule `100050`, 2 alerts on rule `5712`, all within roughly 90 seconds.
+
+**Quiet run** (a deliberately low-volume variant — 6 usernames, 1 password each, paced ~15 seconds apart): rule `5712` did not fire at all; rule `100050` fired twice.
+
+![Linux noisy run](/images/wazuh-home-lab/05/linux-noisy.png)
+
+![Linux quiet run](/images/wazuh-home-lab/05/linux-quiet.png)
+
+The quiet run is the direct demonstration of this lab's core finding: 6 total authentication failures, well under `5712`'s threshold of 8, produced zero alerts from the default rule — while the same 6 events, spread across 6 distinct usernames, correctly tripped the new correlation rule.
+
+## Part 5 — Windows Live Validation
+
+**Noisy run** (Lab 03's original 12-username, 2-password `ValidateCredentials` script): 4 alerts on rule `100051`. Rule `60204` — Wazuh's built-in Windows equivalent of `5712`, with the same 8-failure/240-second threshold — did not fire, despite 24 total failed attempts well exceeding that threshold. This reproduced identically across two independent runs with `100051` active.
+
+Rather than accept this as an unexplained property of Wazuh's shipped ruleset, a direct A/B test was run: `100051` was temporarily disabled and the manager restarted, then the exact same noisy script was rerun. With `100051` out of the picture, **`60204` fired twice**, exactly as its own threshold would predict. Re-enabling `100051` and repeating the test once more reproduced the original silence.
+
+This turned out to be a known, documented limitation of Wazuh's correlation engine, not a misconfiguration or a defect specific to this ruleset. Wazuh's own GitHub issue tracker (issue #30461, "Wazuh ignores second rule/alert with frequency for the same group") describes the exact mechanism: when multiple rules with a `frequency` condition share the same base event group, once one frequency rule fires for a given event, subsequent frequency rules watching that same group stop processing that event — even with different rule IDs and different thresholds. `100051` and `60204` are both frequency-based correlation rules chained off the same base event group (`60122` / `authentication_failed`); `100051`'s lower threshold (5 distinct usernames) reaches its trigger condition before `60204`'s higher one (8 total failures) gets the chance to, so `60204` never fires while `100051` is active. This is a real, general limitation worth knowing before adding any new correlation rule to an environment with existing ones watching the same base events — it can silently disable detection that was previously working, with no error or warning anywhere in the pipeline.
+
+**Quiet run** (6 usernames, 1 password each, ~5 seconds apart): rule `60204` stayed silent — correctly, this time, since 6 total attempts sit under its 8-failure threshold — while rule `100051` fired once.
+
+![Windows noisy run](/images/wazuh-home-lab/05/windows-noisy.png)
+
+![Windows quiet run](/images/wazuh-home-lab/05/windows-quiet.png)
+
+## Part 6 — An Infrastructure Detour
+
+Partway through Windows testing, a new alert failed to appear in the dashboard despite confirming it existed in the raw alert log. Investigation traced this to Filebeat repeatedly failing to publish to the indexer (`failed to publish events: temporary bulk send failure`), which in turn traced back to the root disk sitting at 96% capacity — enough to trip the indexer's automatic flood-stage read-only protection.
+
+The root cause: `<logall_json>yes</logall_json>` — the raw-archive setting explored once during Lab 04 troubleshooting and, per that lab's own notes, deliberately not pursued further — had been left enabled. Over the following labs, it quietly accumulated gigabytes of full-event archives (`ossec-alerts-30.json` alone had grown to 619MB, with the actively-writing file for this lab's testing day reaching 911MB). Disabling the setting and compressing completed prior-day log files brought disk usage back down and allowed the indexing pipeline to recover on its own.
+
+This is a direct, concrete consequence of a decision made two labs earlier, and a legitimate capacity-planning finding in its own right — see Lessons Learned below.
+
+## Part 7 — MITRE ATT&CK Confirmation
+
+Lab 03 found that T1110.004 (Credential Stuffing) never appeared as its own entry in the MITRE ATT&CK module — activity rolled up into the parent technique, T1110, with no way to distinguish stuffing from generic brute forcing. With both custom rules deployed and validated, T1110.004 now appears populated in its own right.
+
+![MITRE ATT&CK, T1110.004 populated](/images/wazuh-home-lab/05/mitre.png)
+
+## Comparison Summary
+
+The core comparison across both platforms follows the same shape. On Linux, the original Lab 03-style attack produced far more alerts from the new rule (16) than the old one (2) simply because the new rule lacks a rate-limiting `ignore` window that the default rule has — `5712` is defined with `ignore="60"`, suppressing repeat fires within 60 seconds of a prior one, while the custom rule re-evaluates and re-fires every time a new event still satisfies its condition. The quiet run removes that volume confound entirely: 6 low-and-slow attempts spread across 6 accounts produced zero default-rule alerts and two new-rule alerts, which is the cleanest possible demonstration that the new rule detects something the old one structurally cannot see, independent of any noise difference between them.
+
+Windows tells a similar story with one important twist. The quiet run matches the Linux pattern closely: `60204` correctly stayed silent under threshold, `100051` fired once. The noisy run initially looked like a repeat of the Linux side's story — new rule fires, old rule doesn't — but a direct A/B test (disabling `100051` and rerunning the identical attack) showed `60204` firing perfectly fine on its own. Tracing this down further identified a documented Wazuh engine behavior (GitHub issue #30461): multiple frequency-based rules watching the same base event group compete for the same events, and once one claims an event toward its own threshold, others stop being evaluated against it. That reframes the Windows noisy-run comparison: it isn't evidence that `60204` has some independent blind spot the way `5712` structurally does on Linux, it's evidence that adding `100051` to this environment has a real, known side effect on existing detection coverage — arguably a more important operational finding than the original "old rule blind to distributed accounts" thesis, since it means the fix itself introduces a new risk that needs to be accounted for.
+
+## MITRE ATT&CK Mapping
+
+Both custom rules map to **T1110.004 (Credential Stuffing)**, a sub-technique of **T1110 (Brute Force)** under the **Credential Access** tactic. Prior to this lab, Wazuh's default ruleset only ever tagged matching activity with the parent T1110 — the sub-technique classification simply didn't exist in the dashboard's MITRE view, regardless of how the underlying attack actually behaved. The MITRE mapping added directly to rules `100050` and `100051` is what makes T1110.004 appear as a distinct, filterable entry for the first time in this lab series.
+
+## Lessons Learned
+
+- Wazuh's dynamic vs. static field distinction is not cosmetic — `srcip`/`user` correlators silently do nothing against decoders that only populate dynamic equivalents (`win.eventdata.ipAddress`, `srcuser`), and the failure mode is silence, not an error, making it easy to ship a rule that looks correct but never fires.
+- `wazuh-logtest`'s interactive session state, while useful for basic decoding/rule-match validation, produced two negative-test results for `different_srcuser` that weren't fully consistent with each other under a simple mental model of the option's behavior — live-traffic testing was the deciding evidence, not further isolated theorizing.
+- Correlation rules without an `ignore` window will re-fire on every qualifying event, not just once per detected pattern — a real, immediate noise cost for a rule that catches genuinely more than the default ruleset does. Worth weighing detection completeness against alert volume explicitly, rather than assuming "more specific detection" is free.
+- Deploying a custom correlation rule chained off the same base event group as an existing correlation rule can silently suppress the existing rule entirely, with no error anywhere in the pipeline. Confirmed via a direct A/B/A test (`60204` fired with `100051` disabled, went silent with it re-enabled, fired again once disabled a second time) and traced to a known, documented Wazuh engine limitation (GitHub issue #30461): frequency rules sharing a base event group compete for the same events, and once one rule's threshold claims an event, other frequency rules watching that group stop being evaluated against it. Anyone adding a new correlation rule to an environment with existing ones watching the same base events should explicitly verify the old rule still fires afterward — it won't fail loudly if it stops.
+- A setting left enabled from Lab 04 troubleshooting (`logall_json`) silently consumed disk space over two labs' worth of testing until it triggered a real infrastructure failure (indexer read-only lock, blocked alert pipeline) mid-lab. Settings explored and set aside during troubleshooting need to actually be reverted, not just mentally filed as "not pursued further."
+- Attack tooling's own behavior (thread count, connection pacing) interacts with correlation rule assumptions in ways worth testing deliberately — a single-threaded Hydra run against the same target took roughly 18 minutes instead of under 2, changing which correlation windows got crossed and how often, independent of anything about the detection rule itself.
+
+## Conclusion
+
+Both custom rules work as designed: cross-username credential stuffing that stays under the default ruleset's volume thresholds is now reliably detected on both Linux and Windows, with a direct, visible MITRE ATT&CK mapping to back it up. Getting there surfaced more real friction than expected — a decoder field mismatch on each platform, correlation semantics that don't fully match documentation, a confirmed instance of a known Wazuh engine limitation where the new Windows rule silently suppressed an existing built-in one, and a disk-capacity incident traced back to an old, unreverted setting.
+
+That noise problem — both custom rules re-firing repeatedly for a single sustained attack, in contrast to the default rules' rate-limited single alerts — is the direct, concrete lead-in to Lab 06: **False Positive Reduction and Detection Tuning**, which will look at adding `ignore` windows and other tuning mechanisms to bring these new rules' alert volume in line with the value of what they're actually detecting.
