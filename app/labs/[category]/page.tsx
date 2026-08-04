@@ -1,22 +1,10 @@
-// app/labs/[category]/page.tsx
-//
-// Lists every lab activity belonging to a single series, e.g. /labs/wazuh-labs
-// lists all lab activities under the "wazuh-labs" category.
-//
-// Dynamic route segment:
-//   [category] → e.g. "wazuh-labs"
-// This sits alongside app/labs/[category]/[slug]/page.tsx — Next.js treats
-// the presence/absence of the extra [slug] segment as the differentiator,
-// so both routes coexist without conflict.
-
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { SectionWrapper } from "@/app/components/layout";
 import { ObjectCard, PrimaryButton } from "@/app/components/ui";
 import { getPostsByCategory, buildPageTitle } from "@/lib/utils";
+import { getCategoryInfo } from "@/lib/categories";
 
-// A leaner variant of ParamProps — this route only has a [category] segment,
-// no [slug], so we don't reuse the two-segment ParamProps type from lib/types.
 type CategoryParamProps = {
   params: Promise<{
     category: string;
@@ -25,17 +13,18 @@ type CategoryParamProps = {
 
 export async function generateMetadata({ params }: CategoryParamProps): Promise<Metadata> {
   const { category } = await params;
+  const { title, description } = getCategoryInfo(category);
+
   return {
-    title: buildPageTitle(category),
-    description: `Hands-on lab activities in the ${category} series.`,
+    title: buildPageTitle(title),
+    description,
   };
 }
 
 export default async function LabSeriesPage({ params }: CategoryParamProps) {
   const { category } = await params;
+  const { title } = getCategoryInfo(category);
 
-  // Returns all MDX posts under this category, or an empty array if the
-  // category directory doesn't exist / has no posts.
   const posts = getPostsByCategory(category);
 
   if (!posts || posts.length === 0) {
@@ -43,7 +32,7 @@ export default async function LabSeriesPage({ params }: CategoryParamProps) {
   }
 
   return (
-    <SectionWrapper heading="Building a Production-Grade SOC: A Wazuh Lab Series">
+    <SectionWrapper heading={title}>
       <div className="flex flex-wrap gap-4">
         {posts.map((post) => (
           <div key={post.slug} className="flex lg:max-w-93">

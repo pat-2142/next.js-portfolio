@@ -1,11 +1,8 @@
 import { SectionWrapper } from "../layout";
 import { ObjectCard, PrimaryButton, Tag } from "../ui";
-import { getWazuhLabs } from "@/lib/utils";
 import { labSeriesList } from "@/lib/data";
 
 export default function LabCard() {
-    const wazuhLabs = getWazuhLabs();
-
     return (
         <SectionWrapper heading="LABS">
             <div className="flex flex-wrap gap-4">
@@ -38,15 +35,3 @@ export default function LabCard() {
         </SectionWrapper>
     );
 }
-
-/*{wazuhLabs.map((lab) => (
-    <div  key={lab.slug} className="flex lg:max-w-93">
-    <ObjectCard>
-        <h3 className="font-bold text-center">{lab.frontmatter.title}</h3>
-        <p>{lab.frontmatter.description}</p>
-        <div className="flex gap-2 flex-wrap justify-center">
-            <PrimaryButton label="VIEW ACTIVITY" href={`/labs/${lab.category}/${lab.slug}`} />
-        </div>
-    </ObjectCard>
-</div>
-))}*/
