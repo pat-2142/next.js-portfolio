@@ -96,7 +96,11 @@ Notably, inspecting Wazuh's own built-in `60204` rule after the fact showed it u
 
 **Noisy run** (reproducing Lab 03's original attack, `hydra -L userlist.txt -P wordlist.txt ssh://<agent-ip> -t 4 -V`): 16 alerts on rule `100050`, 2 alerts on rule `5712`, all within roughly 90 seconds.
 
-**Quiet run** (a deliberately low-volume variant — 6 usernames, 1 password each, paced ~15 seconds apart): rule `5712` did not fire at all; rule `100050` fired twice.
+**Quiet run** (a deliberately low-volume variant, single-threaded and paced to stay under the default rule's volume threshold while still crossing the new rule's distinct-username threshold):
+```bash
+hydra -L quiet_userlist.txt -p welcome1 ssh://<agent-ip> -t 1 -c 15 -V
+```
+(`quiet_userlist.txt`: `admin`, `root`, `deploy`, `devops`, `backup`, `sysadmin` — 6 usernames, single shared password, ~15-second gap between each connection attempt.) Rule `5712` did not fire at all; rule `100050` fired twice.
 
 ![Linux noisy run](/images/wazuh-home-lab/05/linux-noisy.png)
 
@@ -112,7 +116,22 @@ Rather than accept this as an unexplained property of Wazuh's shipped ruleset, a
 
 This turned out to match a community-filed GitHub issue describing the same behavior in Wazuh's correlation engine ([issue #30461](https://github.com/wazuh/wazuh/issues/30461), "Wazuh ignores second rule/alert with frequency for the same group," filed against version 4.7.3). The reporter describes an identical mechanism, down to a near-matching example use case involving Windows 4625 authentication failures grouped under `authentication_failed`: when multiple rules with a `frequency` condition share the same base event group, once one frequency rule fires for a given event, subsequent frequency rules watching that same group stop processing that event — even with different rule IDs and different thresholds. `100051` and `60204` are both frequency-based correlation rules chained off the same base event group (`60122` / `authentication_failed`); `100051`'s lower threshold (5 distinct usernames) reaches its trigger condition before `60204`'s higher one (8 total failures) gets the chance to, so `60204` never fires while `100051` is active. This is a real, general limitation worth knowing before adding any new correlation rule to an environment with existing ones watching the same base events — it can silently disable detection that was previously working, with no error or warning anywhere in the pipeline.
 
-**Quiet run** (6 usernames, 1 password each, ~5 seconds apart): rule `60204` stayed silent — correctly, this time, since 6 total attempts sit under its 8-failure threshold — while rule `100051` fired once.
+**Quiet run** (6 usernames, 1 password each, ~5 seconds apart):
+```powershell
+$usernames = @("admin", "root", "deploy", "devops", "backup", "sysadmin")
+$password = "welcome1"
+
+Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+$context = New-Object System.DirectoryServices.AccountManagement.PrincipalContext(
+    [System.DirectoryServices.AccountManagement.ContextType]::Machine)
+
+foreach ($user in $usernames) {
+    $context.ValidateCredentials($user, $password)
+    Write-Host "Tried $user : $password"
+    Start-Sleep -Seconds 5
+}
+```
+Rule `60204` stayed silent — correctly, this time, since 6 total attempts sit under its 8-failure threshold — while rule `100051` fired once.
 
 ![Windows noisy run](/images/wazuh-home-lab/05/windows-noisy.png)
 
