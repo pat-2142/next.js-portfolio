@@ -106,18 +106,6 @@ export const certificateList: CertificateProps[] = [
             "OBSERVABILITY"
         ],
         link: "https://catalog-education.oracle.com/ords/certview/sharebadge?id=1940A68E7777C07EE681EE8110DE2D683D7EAB5B023C76C5825FD5E0ACD5CA47"
-    },
-    {
-        id: 4,
-        title: "CISCO CYBEROPS ASSOCIATE COURSE",
-        description: "Completed the Cisco CyberOps Associate course, covering security monitoring, host-based analysis, network intrusion analysis, and security policies and procedures. Preparing for the CBROPS exam.",
-        tags: [
-            "CISCO",
-            "SECURITY OPERATIONS",
-            "NETWORK SECURITY"
-        ],
-        link: "https://www.credly.com/badges/17407221-cc98-44de-9683-711a8b4f5746/linked_in_profile"
-
     }
 ]
 
