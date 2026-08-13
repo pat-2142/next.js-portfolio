@@ -1,0 +1,131 @@
+---
+title: "Lab 06: False Positive Reduction and Detection Tuning"
+description: "Tuning custom credential stuffing rules to stop re-firing on every qualifying event, and discovering that the fix solved alert volume without touching a separate, still-unresolved rule-suppression bug."
+date: "2026-08-12"
+---
+
+## Introduction
+
+Lab 05 closed with a direct, concrete starting point: custom rules `100050` (Linux) and `100051` (Windows) lack the `ignore` attribute that built-in rules like `5712` use to rate-limit re-firing, causing both to alert on every qualifying event across a single sustained attack rather than once per detected pattern. Lab 05 also surfaced a separate, more troubling finding — a frequency-rule suppression bug (matching a filed Wazuh GitHub issue, [#30461](https://github.com/wazuh/wazuh/issues/30461)) where `100051` firing prevented the built-in rule `60204` from firing at all, despite both watching the same base event group.
+
+This lab set out to do two things:
+
+- Add an `ignore` window to `100050`/`100051` and validate, with real before/after alert counts on the identical attack from Lab 05, that re-fire volume actually drops.
+- Re-verify `60204` under the same conditions that exposed the suppression bug in Lab 05, now that `100051`'s behaviour has changed — because a change to a rule sharing that base group is exactly the kind of event Lab 05's own findings say warrants re-testing the other rule, not assuming it still works.
+
+What actually happened diverged from that plan in an instructive way. The tuning fix worked cleanly. The suppression bug did not resolve — and understanding *why* it didn't turned into the more valuable finding of the two.
+
+## Lab Environment
+
+No topology changes since Lab 05. One infrastructure issue surfaced mid-lab and is documented as its own section below, since it materially affected troubleshooting and is a genuine finding in its own right — a misconfigured Wazuh module, not a hardware limitation, turned out to be responsible for disk pressure that has recurred across several labs now.
+
+## Part 1 — Tuning `100050` and `100051`
+
+An `ignore="120"` attribute was added to both custom rules, matching their existing 120-second `timeframe` rather than borrowing the shorter `ignore="60"` used by built-in rule `5712` — the intent being to suppress re-firing for at least one full detection cycle rather than a fixed, arbitrarily shorter window.
+
+To validate, the identical Lab 05 attack was re-run against the Linux agent:
+
+```bash
+hydra -L userlist.txt -P wordlist.txt ssh://10.10.1.116 -t 4 -V
+```
+
+Same host, same username/password lists, same thread count (`-t 4`), so this is a fair like-for-like comparison against Lab 05's original result.
+
+![Linux agent — noisy credential stuffing run, post-tuning](/images/wazuh-home-lab/06/linux-noisy.png)
+
+Where Lab 05 recorded **16 alerts** from rule `100050` for this exact attack, the post-tuning run produced **1 alert**:
+
+```json
+{
+  "rule": {
+    "id": "100050",
+    "level": 12,
+    "description": "sshd: Credential stuffing suspected - 5+ distinct usernames targeted from the same source IP within 120 seconds",
+    "frequency": 5,
+    "firedtimes": 1,
+    "mitre": { "id": ["T1110.004"], "tactic": ["Credential Access"] }
+  }
+}
+```
+
+The single alert fired at 14:10:28 UTC, ten seconds into an attack that started at 14:10:18 UTC, and was correctly attributed to the Hydra traffic (`srcip: 10.10.1.127`, `srcuser` values including `john` and `admin`). One honest caveat worth recording rather than glossing over: the alert fired with only two distinct usernames visible in its `previous_output` context, not the five the rule's own description implies. This doesn't affect the volume-reduction result — `ignore` did exactly what it was added to do — but it's a reminder, consistent with Lab 05's own note about `different_srcuser` matching semantics not being fully transparent from isolated observation, that the rule's actual triggering behaviour may be counting something slightly different from what its description states. That question is noted here rather than resolved; live-traffic testing across more runs would be needed to pin it down precisely.
+
+## Part 2 — Re-verifying Rule 60204
+
+Lab 05 found that with `100051` active, built-in rule `60204` stopped firing entirely on Windows credential-stuffing traffic that should have crossed its 8-failure/240-second threshold — both rules watch the same `authentication_failed` base group, and Wazuh's frequency-rule matching only evaluates one rule per qualifying event. The question for Lab 06 was whether tuning `100051`'s `ignore` attribute would incidentally resolve this, since it was the same rule involved in both findings.
+
+To test this fairly, the original Lab 03 Windows credential-stuffing script was reproduced exactly — 12 usernames × 2 passwords, not the smaller 6-username quiet-run variant, since it was the noisy version that originally exposed the suppression bug in Lab 05:
+
+```powershell
+$usernames = @("admin", "administrator", "john", "sarah", "mike",
+               "david", "guest", "test", "deploy", "devops",
+               "backup", "sysadmin")
+$passwords = @("password123", "welcome1")
+
+Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+$context = New-Object System.DirectoryServices.AccountManagement.PrincipalContext(
+    [System.DirectoryServices.AccountManagement.ContextType]::Machine)
+
+foreach ($user in $usernames) {
+    foreach ($pass in $passwords) {
+        $context.ValidateCredentials($user, $pass)
+        Write-Host "Tried $user : $pass"
+        Start-Sleep -Milliseconds 800
+    }
+}
+```
+
+![Windows agent — noisy credential stuffing run, post-tuning](/images/wazuh-home-lab/06/windows-noisy.png)
+
+Per the validation methodology established in Lab 05, the dashboard filter included both rule IDs together (`60204` and `100051`), so that `60204`'s absence would be visibly in-frame rather than inferred from omission. The filtered result showed exactly one alert — from `100051`, `firedtimes: 3`, correctly formed and attributed. **`60204` did not fire.**
+
+This is a materially different, more precise finding than "the bug is still present." It clarifies that `ignore` and rule-suppression are two separate mechanisms that happened to be visible in the same pair of rules:
+
+- `ignore` controls how soon a rule that has already fired is permitted to fire again.
+- The suppression behaviour described in [Wazuh issue #30461](https://github.com/wazuh/wazuh/issues/30461) governs which frequency rule "claims" a qualifying event in the first place, when multiple frequency rules watch the same base group. Once `100051` claims an event, `60204` is never evaluated against it — regardless of whether `100051` is itself rate-limited afterward.
+
+Tuning `100050`/`100051`'s re-fire volume did nothing to change which rule wins that initial claim. The suppression issue remains open and needs its own remediation — most likely an explicit ordering or `if_sid` relationship between the two rules — rather than anything addressed in this lab.
+
+## Infrastructure Detour — Disk Capacity and the Vulnerability Detector
+
+Mid-lab, a test run appeared to produce zero dashboard alerts despite `alerts.json` showing thousands of events for the same window. Investigation ruled out several plausible causes in turn — the indexer cluster reported healthy (`green`) throughout, `logall_json` was correctly disabled from Lab 05's fix, and the failure wasn't a stale dashboard filter, since a direct time-scoped OpenSearch query (bypassing the dashboard entirely) also returned zero hits for the window in question.
+
+The actual cause was found by working backward from disk usage, which was sitting at 94-96% on the 34GB root volume. `/var/ossec/queue/vd` — Wazuh's vulnerability-detector module, which caches downloaded CVE/feed data — was consuming 9.3-9.4GB, refreshed on a `<feed-update-interval>60m</feed-update-interval>` setting in `ossec.conf`. That disk pressure had pushed the indexer into its flood-stage protection, applying a read-only block on the day's active index (`"read_only_allow_delete": "true"`, confirmed directly via the index settings API) — which in turn caused Filebeat to fail shipping new alerts in a continuous retry loop (`failed to publish events: temporary bulk send failure`), the identical failure signature to the Lab 05 disk incident.
+
+Clearing the read-only block via the OpenSearch settings API restored shipping immediately. The feed-update interval was changed from `60m` to `1d` to prevent the same 9GB+ churn from recurring every hour.
+
+A second, larger finding followed directly from this: checking the VirtualBox VM details revealed the underlying virtual disk had a 70GB capacity, but the guest's LVM logical volume had only ever been allocated 34GB of a 68GB physical partition — 34GB of headroom had been sitting unused, unallocated, since the environment was first provisioned. Extending the logical volume and filesystem resolved this properly rather than continuing to fight disk pressure through manual log cleanup:
+
+```bash
+sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+```
+
+Root filesystem capacity went from 34GB to 67GB, with usage dropping to roughly 46% at the time of the fix. The disk-capacity constraint that has been a recurring theme since Lab 05 was, it turns out, never a hardware limitation of the host — it was an LVM provisioning gap from initial setup, compounded by an over-aggressive default feed-refresh interval on a module not previously tuned for a small-disk environment.
+
+## Comparison Summary
+
+The `100050`/`100051` tuning produced a clean, unambiguous result: the identical Linux credential-stuffing attack that generated 16 alerts in Lab 05 generated 1 alert after the `ignore="120"` change, with the surviving alert confirmed correctly attributed to the attack traffic. This is exactly the outcome the fix was designed to produce, and the comparison held under identical attack parameters (same host, thread count, and username/password lists), consistent with the series' validation methodology.
+
+The `60204` re-verification told a different story. Under the original Lab 03 noisy Windows script — the same attack shape that exposed the suppression bug in Lab 05 — `100051` fired once, correctly, while `60204` did not fire at all, confirmed via a dashboard filter that included both rule IDs together. The `ignore` change had no effect on this outcome, because it addresses a different part of the rule engine's behaviour than the one responsible for the suppression. Where Lab 05 established that the suppression bug existed, Lab 06 establishes more precisely what a partial fix does and does not address — the two problems needed to be told apart rather than assumed to share a solution.
+
+## MITRE ATT&CK Mapping
+
+The tuning work in this lab did not change any MITRE mapping — `100050`/`100051` continue to map to T1110.004 (Credential Stuffing, Credential Access), and `60204` maps to the same parent T1110 grouping as the built-in rules discussed in Lab 03. What changed is alert fidelity and volume within those existing mappings, not technique coverage itself.
+
+The `60204` finding does have a coverage implication worth carrying into Lab 07's planned MITRE ATT&CK Coverage Analysis: a rule that is correctly configured, correctly mapped to a technique, and would fire under isolated testing can still be silently non-functional in practice due to a pipeline-level interaction with another rule. A coverage analysis that only checks whether a rule *exists* and is *mapped* would have missed this entirely — it only surfaced through the same disciplined live-traffic, both-rules-filtered testing this lab used throughout.
+
+## Lessons Learned
+
+- Adding an `ignore` attribute to a custom frequency rule is an effective, low-risk fix for re-fire volume, and the before/after comparison (16 → 1 alerts on an identical attack) is direct, reproducible evidence of that.
+- `ignore` and cross-rule frequency suppression (per Wazuh GitHub issue #30461) are two distinct mechanisms. A fix for one should never be assumed to resolve the other without direct re-testing — they happened to be visible in the same rule pair here, which made it easy to conflate them.
+- A single alert firing early in an attack window, with fewer distinct values present than the rule's threshold implies, is worth flagging rather than treating as confirmation the rule is working exactly as described — the underlying matching semantics for `different_srcuser`/`different_field` correlators remain incompletely understood from this series' testing so far.
+- Vulnerability-detector feed-update intervals should be sized to the host, not left at Wazuh's default. A 60-minute interval on a small-disk single-host lab produced a 9GB+ re-download on every manager restart — the setting is a legitimate, config-level fix, not something requiring a larger disk to work around.
+- Checking a VM's actual allocated partition size against its underlying virtual disk capacity is worth doing early, not as a last resort. A disk-capacity problem treated for multiple labs as a hardware constraint of the host turned out to be an LVM provisioning gap that took one VirtualBox details screen to notice.
+- When a live troubleshooting session accumulates several unrelated findings (disk capacity, module misconfiguration, LVM sizing) alongside the original test objective, it's worth deciding deliberately which belong in the current lab's write-up versus which are better scoped as their own future work, rather than letting lab scope expand indefinitely mid-session.
+
+## Conclusion
+
+Lab 06 achieved a genuine, evidenced fix for one problem (custom rule re-fire volume) and a genuine, evidenced non-fix for a related but distinct one (cross-rule frequency suppression), plus an unplanned but consequential infrastructure fix that resolves a disk-capacity constraint this series has been working around since Lab 05. That's a fair outcome for a lab titled around false positive reduction and detection tuning — noise was reduced where the fix actually applied, and a more precise understanding of what the fix didn't touch is now on record instead of an assumed resolution.
+
+Two concrete items carry forward. The `60204`/`100051` suppression interaction remains unresolved and needs its own fix — most likely an explicit rule-ordering or `if_sid` relationship rather than anything addressed through `ignore` — and is a natural fit for Lab 07's planned MITRE ATT&CK Coverage Analysis, since it's a concrete example of a technique with an existing, mapped rule that doesn't actually produce coverage in practice. The Sysmon `92213` false positive flagged in Lab 04 — a default, MITRE-mapped rule confidently misfiring on a benign PowerShell internal artifact — was scoped for this lab but not reached, and remains open for Lab 07 or a dedicated follow-up.
