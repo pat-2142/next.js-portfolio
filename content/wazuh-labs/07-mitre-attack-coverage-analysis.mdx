@@ -1,0 +1,189 @@
+---
+title: "Lab 07: MITRE ATT&CK Coverage Analysis"
+description: "Auditing declared MITRE ATT&CK coverage against what has actually been validated in this environment, and resolving two carry-forward findings from Labs 05 and 06 along the way — one successfully, one not."
+date: "2026-08-26"
+---
+
+## Introduction
+
+Six labs into this series, the Wazuh dashboard's MITRE ATT&CK module reports a long list of technique IDs with rules mapped to them. That list is real, but it answers a narrower question than it looks like it answers: it says a rule exists and carries a `<mitre>` tag, not that the rule has ever been shown to fire correctly against real traffic in this environment. Labs 05 and 06 already surfaced two concrete cases where that distinction matters — a built-in rule (`60204`) that is correctly written, correctly mapped, and structurally prevented from firing by another rule sharing its base event group; and a default Sysmon rule (`92213`) that fires reliably but on a benign artifact, misattributing normal PowerShell behavior to Command and Control activity.
+
+This lab treats "MITRE coverage" as a claim that needs evidence, not a checklist to read off the ruleset. The objective was to:
+
+- Build an inventory of MITRE-mapped rules relevant to this environment's actual telemetry sources, rather than surveying Wazuh's full default ruleset (which includes decoders for infrastructure — mail servers, cloud providers, network firewalls — that don't exist in this lab)
+- Classify each mapped technique by the strength of its evidence: validated against real traffic, declared but never tested, declared and confirmed broken, or validated but unreliable
+- Attempt a fix for the `60204` suppression carried forward from Lab 06, and follow the investigation wherever it led
+- Attempt a fix for the `92213` false positive carried forward from Lab 04, with a genuine positive/negative control test
+- Produce a coverage summary that states confidence per technique honestly, rather than treating rule existence as equivalent to detection capability
+
+
+## Lab Environment
+
+No topology changes since Lab 06 — the single i3-6006U host running the Wazuh manager, indexer, and dashboard together, with the Xubuntu Linux agent (sshd telemetry) and the Windows 10 Home agent (Security, System, PowerShell Operational, and Sysmon telemetry) as the two monitored endpoints. Root filesystem capacity remains at 67GB following Lab 06's LVM extension, with the vulnerability-detector feed-update interval still set to `1d`.
+
+One infrastructure note specific to this lab: `logall_json` (the raw-archive setting responsible for two prior disk-capacity incidents in Labs 05 and 06) was intentionally re-enabled for a short window to capture a single PowerShell `4104` event in its as-received JSON form, then immediately disabled again. Given the setting's history in this series, this was treated as a deliberate, time-boxed exception rather than a standing change.
+
+
+## Part 1 — Building the Technique Inventory
+
+Rather than auditing Wazuh's entire default ruleset — the majority of which covers log sources this lab has no agents for — the inventory was scoped to files matching this environment's actual telemetry: `0095-sshd_rules.xml` (Linux authentication), `0580-win-security_rules.xml` (Windows Security log), `0595-win-sysmon_rules.xml` plus the `sysmon_id_*` rule files (Sysmon), `0915-win-powershell_rules.xml` (PowerShell Module/Script Block Logging), `0840-win_event_channel.xml` (generic Windows eventchannel), and `local_rules.xml` (this series' own custom rules).
+
+Pulled via:
+
+```bash
+sudo bash -c 'grep -rE "mitre|<id>[0-9]{5,6}</id>" /var/ossec/ruleset/rules/*.xml /var/ossec/etc/rules/*.xml -B6' | grep -E "rule id=|<id>T[0-9]|<mitre>|</mitre>"
+```
+
+Within that scope, the techniques with the most direct relevance to this series' prior work are:
+
+- **T1110 / T1110.001 (Brute Force)** — sshd rules `5710`, `5712`, `5716`, `5718`–`5720`, `5758`, `5760`, `5763`; Windows Security `60203`, `60204`; win-generic `64109`/`64110`
+- **T1110.004 (Credential Stuffing)** — this series' own custom rules, `100050` (Linux) and `100051` (Windows)
+- **T1105 (Ingress Tool Transfer)** — Sysmon Event ID 11 rules `92200`–`92227`, including `92213`
+- **T1059 / T1059.001 (Command and Scripting Interpreter / PowerShell)** — Sysmon Event ID 1 rules (`92000`–`92081`) and the PowerShell Operational rules (`91803`–`91846`)
+- **T1055 (Process Injection)** — win-sysmon `61618`–`61640`, plus the Sysmon Event ID 8 and 10 rule files
+
+
+## Part 2 — Classifying Declared vs. Validated Coverage
+
+Grepping for `<mitre>` tags answers "is this technique declared." It doesn't answer "has this technique's detection actually been demonstrated to work." Cross-referencing the inventory above against this series' own testing history (Labs 01–06) produces four categories, not two:
+
+**Validated** — the rule has fired correctly against real, deliberately generated traffic, with the resulting alert confirmed in the dashboard.
+- `100050` / `100051` (T1110.004) — fired correctly against low-and-slow, cross-username credential stuffing on both platforms (Lab 05), with re-fire volume tuned and re-confirmed in Lab 06
+- `92057` (T1059.001) — fired correctly on an encoded PowerShell command, correctly identifying the parent/child process spawn and the full command line (Lab 04)
+
+**Declared, known-broken** — the rule is correctly configured and mapped, would fire under its own stated logic, but is structurally prevented from doing so by another rule in the pipeline.
+- `60204` (T1110) — confirmed via direct A/B/A testing (Lab 05, re-verified Lab 06) to never fire while `100051` is active, despite `100051` being disabled and `60204` firing normally in isolation
+
+**Validated, but unreliable** — the rule fires reliably and its trigger condition is real, but the trigger condition does not mean what its MITRE mapping claims.
+- `92213` (T1105) — fired reliably and repeatably on the `__PSScriptPolicyTest_*.ps1` artifact, a benign file PowerShell's own Script Block Logging generates internally, not a genuine ingress tool transfer (Lab 04)
+
+**Telemetry-confirmed, rule-silent** — the underlying event data arrives, decodes correctly, and reaches the rule engine, but nothing in the current ruleset evaluates it at any severity.
+- PowerShell Script Block content generally — a `4104` event decoded cleanly through `wazuh-logtest` (Phase 2) but produced no rule match at all in Phase 3, confirming directly (rather than inferring from dashboard absence) that no currently loaded rule inspects `win.eventdata.scriptBlockText`
+
+This last category didn't exist in Lab 04 or Lab 06's framing — both treated the PowerShell Operational gap as "no alert appeared in the dashboard," which is consistent with either "no rule matches" or "a rule matches but sits below alert-indexing severity." Direct `wazuh-logtest` verification against a captured, real `4104` event (pulled from a deliberately time-boxed `logall_json` window) settled which one it actually is: no rule match, full stop.
+
+
+## Part 3 — Investigating the `60204` Suppression
+
+Lab 06 left this open with a specific hypothesis for the likely fix: an explicit `if_sid` or ordering relationship between `60204` and `100051`. Testing that required first seeing the actual rule chain, not just the summary each prior lab had worked from:
+
+```xml
+<!-- 100051 (custom, local_rules.xml) -->
+<rule id="100051" level="12" frequency="5" timeframe="240" ignore="120">
+  <if_matched_sid>60122</if_matched_sid>
+  <same_field>win.eventdata.ipAddress</same_field>
+  <different_field>win.eventdata.targetUserName</different_field>
+  ...
+</rule>
+
+<!-- 60204 (built-in) -->
+<rule id="60204" level="10" frequency="$MS_FREQ" timeframe="240">
+  <if_matched_group>authentication_failed</if_matched_group>
+  <same_field>win.eventdata.ipAddress</same_field>
+  ...
+</rule>
+```
+
+This surfaced a genuine structural difference neither prior lab had examined directly: `100051` matches via `if_matched_sid` against one specific rule (`60122`), while `60204` matches via the broader `if_matched_group` against an entire category (`authentication_failed`). That produced a testable hypothesis — that Wazuh's frequency-rule engine might prioritize a specific-ID match over a broad-group match when both compete for the same event.
+
+**Attempt 1 — equalize specificity via override.** `60204` was overridden in `local_rules.xml` with `overwrite="yes"`, changing `if_matched_group` to `if_matched_sid: 60122` to match `100051`'s mechanism exactly. This failed to load as intended — Wazuh's rule engine rejected the change outright:
+
+```
+WARNING: (7605): It is not possible to overwrite 'if_matched_sid' value in rule '60204'. The original value is retained.
+```
+
+`overwrite="yes"` permits replacing most fields on a built-in rule, but not the core matching condition (`if_matched_sid`/`if_matched_group`) itself. The override loaded without syntax errors and produced no other warning, meaning this failure mode is silent in every respect except this one explicit log line — easy to miss, and worth flagging as a general caution for anyone attempting to override built-in Wazuh rules by ID.
+
+**Attempt 2 — a fresh rule ID, unconstrained by the overwrite restriction.** The original `60204` was silenced (`level="0"`, a change `overwrite` *is* permitted to make, since it doesn't touch the matching condition), and a new rule, `100052`, was created from scratch with `if_matched_sid: 60122` and the same `frequency=8, timeframe=240` as the original `60204`:
+
+```xml
+<rule id="100052" level="10" frequency="8" timeframe="240">
+  <if_matched_sid>60122</if_matched_sid>
+  <same_field>win.eventdata.ipAddress</same_field>
+  <description>Multiple Windows Logon Failures (custom - if_matched_sid variant of 60204)</description>
+  <mitre><id>T1110</id></mitre>
+</rule>
+```
+
+This loaded cleanly with no errors. Re-running the identical Lab 05/06 noisy Windows script (12 usernames × 2 passwords) against it, with the dashboard filtered on `100051`, `60204`, and `100052` together, produced exactly one alert — from `100051`. `100052`, despite matching with identical specificity to `100051`, still never fired.
+
+**This falsifies the specificity hypothesis.** The two attempts — one blocked outright, one that loaded and ran but produced the same result as the original bug — point to a different mechanism: **the rule with the lower frequency threshold wins**, independent of specificity or matching mechanism. `100051`'s threshold is 5 distinct usernames; both `60204` and `100052` used a threshold of 8. In both cases, `100051` reached its own trigger condition first, purely by having a lower bar to clear, and claimed the event before the higher-threshold rule was evaluated.
+
+No further fix was attempted within this lab. Reaching a working fix now depends on the actual detection requirement, and both remaining options come with a real cost: raising `100051`'s threshold to exceed `60204`'s would defeat the purpose of the low-and-slow credential stuffing detector it was built for in Lab 05; decoupling them so they no longer share a base event group is possible in principle but would need its own dedicated investigation into which field or group split preserves both rules' detection logic without introducing a new gap. This is recorded here as a structural finding rather than a resolved one.
+
+
+## Part 4 — Resolving the `92213` False Positive
+
+Unlike `60204`, this fix targeted a `<field>` value rather than a matching condition, which meant it wasn't subject to the same `overwrite` restriction. The original rule:
+
+```xml
+<rule id="92213" level="15">
+  <if_group>sysmon_event_11</if_group>
+  <field name="win.eventdata.targetFilename" type="pcre2">(?i)[c-z]:\\Users\\.+\\AppData\\Local\\Temp\\.+\.(exe|com|dll|vbs|js|bat|cmd|pif|wsh|ps1|msi|vbe)</field>
+  <description>Executable file dropped in folder commonly used by malware</description>
+  <mitre><id>T1105</id></mitre>
+</rule>
+```
+
+matches any file with those extensions dropped anywhere under `AppData\Local\Temp`, with no exclusion for filename content — which is why it fires identically on a genuine dropped payload and on PowerShell's own `__PSScriptPolicyTest_*.ps1` internal artifact. The fix was a single negative lookahead inserted into the existing regex:
+
+```xml
+<rule id="92213" level="15" overwrite="yes">
+  <if_group>sysmon_event_11</if_group>
+  <field name="win.eventdata.targetFilename" type="pcre2">(?i)[c-z]:\\Users\\.+\\AppData\\Local\\Temp\\(?!__PSScriptPolicyTest_).+\.(exe|com|dll|vbs|js|bat|cmd|pif|wsh|ps1|msi|vbe)</field>
+  <description>Executable file dropped in folder commonly used by malware</description>
+  <mitre><id>T1105</id></mitre>
+</rule>
+```
+
+The override log did show a warning on load — `"It is not possible to overwrite 'if_group' value in rule '92213'"` — but this referred to the unchanged `if_group` element, not the modified `<field>`, and did not block the actual fix from taking effect.
+
+Two controls were run to confirm the exclusion worked as intended, not just that it loaded:
+
+**Negative control** — the exact Lab 04 trigger (an encoded `Get-LocalUser | Select-Object Name` command) was re-run. `92213` stayed silent. `92057` (T1059.001) fired normally, confirming the exclusion is scoped narrowly enough to leave unrelated detection untouched.
+
+**Positive control** — a file was manually dropped in the same directory under a name that does not match the excluded pattern:
+
+```powershell
+"test" | Out-File -FilePath "$env:TEMP\test_malware_drop.exe"
+```
+
+`92213` fired correctly on this file.
+
+![Wazuh dashboard confirming 92213 silent on the benign trigger and 92057 firing correctly](/images/wazuh-home-lab/07/powershell-dashboard.png)
+
+Both controls landed as predicted. This is a clean, working fix: the false positive identified in Lab 04 is resolved without narrowing the rule's genuine detection capability.
+
+
+## Comparison Summary
+
+Two carry-forward findings, two different outcomes. `60204`'s suppression turned out to be more resistant to remediation than Lab 06's hypothesis suggested — not a matching-specificity issue that a targeted override could solve, but a threshold-order race baked into how Wazuh's frequency-rule engine resolves competing claims on the same base event. Two independent, differently-constructed attempts (an override blocked by Wazuh's own rule-protection logic, then a fresh rule ID built to sidestep that block) both converged on the same negative result, which is stronger evidence for the threshold-order explanation than either attempt alone would have been. The practical implication is that this class of bug can't be patched around at the rule-definition level while a lower-threshold sibling rule remains active on the same base group — it needs either a threshold change that trades away detection sensitivity, or a decoupling redesign this lab didn't attempt.
+
+`92213` resolved cleanly on the first attempt, in contrast — a single regex exclusion, validated by both a negative control (confirming the false positive is gone) and a positive control (confirming genuine detection survives). The difference between the two outcomes isn't a difference in effort; it's a difference in what kind of problem each one actually was. `60204`'s issue lived in the correlation engine's internal event-claiming logic, which local rule overrides have limited power to influence. `92213`'s issue lived entirely in an overly broad field match, which is exactly the kind of thing a local override is built to fix.
+
+
+## MITRE ATT&CK Mapping
+
+This lab's classification work touches every technique in the Part 1 inventory, but the two case studies map to concrete, resolved-or-unresolved states:
+
+**T1110 (Brute Force)**, via `60204`, remains **declared, known-broken**. The rule is correctly mapped and would detect genuine brute-force activity in isolation, but is structurally non-functional in this environment for as long as `100051` (T1110.004) shares its base event group at a lower threshold. This is a materially different and more precise finding than Lab 05 and 06's framing of "suppression bug present" — it now identifies the specific mechanism (threshold-order, not specificity or load-order) responsible.
+
+**T1105 (Ingress Tool Transfer)**, via `92213`, moves from **validated-but-unreliable** to **validated**. The rule now fires accurately on genuine executable drops in the monitored path and correctly excludes the one confirmed benign trigger pattern from this series' testing. This doesn't mean `92213` is now free of all possible false positives — only that the specific, confirmed FP source identified in Lab 04 has been closed with evidence.
+
+**T1059.001 (PowerShell)** carries no change in status from this lab — `92057` remains validated, as established in Lab 04 — but the PowerShell Script Block content gap (no rule inspects `win.eventdata.scriptBlockText` at any severity) is now confirmed directly rather than inferred, and represents a genuine, currently open coverage gap distinct from anything Labs 01–06 identified.
+
+
+## Lessons Learned
+
+- A technique appearing in Wazuh's MITRE ATT&CK dashboard module means a rule exists and is tagged — nothing more. This series now has three concrete, evidenced examples of that distinction mattering: a rule structurally blocked from firing (`60204`), a rule firing on the wrong trigger (`92213`, prior to this lab's fix), and a telemetry source with no rule watching it at all (PowerShell Script Block content).
+- `overwrite="yes"` does not grant unrestricted control over a built-in rule. Matching conditions (`if_matched_sid`, `if_matched_group`) are explicitly protected and will silently retain their original value, logging a warning but not an error — easy to miss unless the log is checked specifically after every override attempt, since neither `wazuh-analysisd -t` nor a clean manager restart surfaces this on its own.
+- When two hypotheses about a bug's mechanism both need testing, structuring the second attempt to specifically falsify or confirm what the first attempt couldn't settle (rather than just trying a different fix) produces a more defensible finding. The `100052` test wasn't really "attempt number two at fixing `60204`" — it was a controlled experiment that isolated specificity from threshold as the variable in question.
+- `wazuh-logtest` sessions built from hand-constructed synthetic JSON should match the exact structure a real decoder expects, or they'll silently fall through to a generic catch-all rule (`1002`) that looks like a result but isn't a meaningful one. Pulling one real captured event from the archive, even briefly, produces a far more trustworthy test artifact than reconstructing the shape from memory.
+- A time-boxed re-enable of `logall_json` — on for the duration of a single capture, then immediately reverted — is a legitimate, low-risk way to get real archived event data for a specific verification, distinct from the standing-enabled misconfiguration that caused disk-capacity incidents in Labs 05 and 06.
+
+
+## Conclusion
+
+This lab set out to establish a working distinction — declared coverage versus validated coverage — and then apply it honestly to two open findings this series had already generated. That distinction held up under real testing: a rule can be present, correctly written, and MITRE-mapped, and still not represent working detection, for reasons ranging from a correlation-engine internal (`60204`) to an overly broad match condition (`92213`, before this lab) to a telemetry source with no rule at all (PowerShell scriptblock content).
+
+The two case studies resolved differently, and that difference is itself the finding worth carrying forward. `60204` could not be fixed within the scope of a local rule override — the threshold-order race it lost to `100051` is a property of how Wazuh's correlation engine resolves competing frequency rules, not something a rewritten condition can route around. `92213` could be fixed, cleanly, with a single field-level exclusion validated by both a negative and a positive control. Knowing which category a given detection gap falls into — fixable at the rule level, or structural to the engine — is arguably a more useful skill than either fix on its own, and it's the throughline this lab leaves for whatever comes next in the series: malware detection, vulnerability scanning integration, and correlation rule design should all be built with the expectation that "the rule exists" is the start of a coverage claim, not the end of one.
