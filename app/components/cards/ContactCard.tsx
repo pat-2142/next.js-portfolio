@@ -10,10 +10,10 @@ export default function ContactCard() {
     <SectionWrapper heading="CONTACT">
       <ObjectCard>
         <p>
-          I'm open to cybersecurity consultant roles, SOC analyst positions,
-          and cloud security engineer opportunities — both locally in Botswana,
-          remotely, and internationally, including relocation opportunities.
-          Feel free to reach out via any of the channels below.
+          I'm open to cybersecurity consultant roles, SOC analyst positions, and
+          cloud security opportunities — locally in Botswana, remotely, and
+          internationally, including relocation. Feel free to reach out via any
+          of the channels below.
         </p>
         <ul className="ml-6">
           <li className="list-disc">
@@ -26,18 +26,6 @@ export default function ContactCard() {
             LinkedIn:{" "}
             <a href={CONTACT.linkedin} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">
               {CONTACT.linkedinLabel}
-            </a>
-          </li>
-          <li className="list-disc">
-            GitHub:{" "}
-            <a href={CONTACT.github} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">
-              {CONTACT.githubLabel}
-            </a>
-          </li>
-          <li className="list-disc">
-            Portfolio:{" "}
-            <a href={CONTACT.portfolio} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">
-              {CONTACT.portfolio}
             </a>
           </li>
         </ul>

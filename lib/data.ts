@@ -1,74 +1,119 @@
 import { CertificateProps, EducationProps, ExperienceProps, ProjectProps, SkillProps, LabSeriesProps } from "./types";
 
 export const experienceList: ExperienceProps[] = [
-  {
-    id: 1,
-    title: "Cybersecurity Consultant",
-    company: "TechBulls Botswana",
-    location: "Gaborone, Botswana",
-    startDate: "October 2023",
-    endDate: "Present",
-    responsibilities: [
-        "Deployed and configured Wazuh SIEM in a SOC environment, managing agent deployment, log ingestion, and endpoint security monitoring across client infrastructure.",
-        "Performed daily alert triage and security event analysis, investigating potential threats, assessing impact, and escalating incidents through defined response workflows.",
-        "Produced independent SecOps reports detailing threat detection findings, alert severity, and remediation recommendations.",
-        "Coordinated incident response workflows with clients during security events including agent disconnections and anomalous endpoint activity.",
-        "Monitored client asset health and network security posture continuously, maintaining full endpoint visibility and supporting vulnerability management processes."
-    ]
-  },
-  {
-    id: 2,
-    title: "Tech Support Intern",
-    company: "Botswana Accountancy College",
-    location: "Gaborone, Botswana",
-    startDate: "February 2020",
-    endDate: "August 2020",
-    responsibilities: [
-        "Delivered technical support to staff and students, resolving hardware, software, and network security issues efficiently.", 
-        "Configured and maintained IT equipment and systems, contributing to a stable and secure IT environment.",
-        "Supported network monitoring and troubleshooting activities, gaining foundational experience in network security operations.",
-        "Provided technical onboarding and training to new staff on IT systems and security best practices."
-    ]
-  }
-];
+    {
+      id: 1,
+      title: "Junior Cybersecurity Consultant — SOC Analyst",
+      company: "TechBulls Botswana",
+      location: "Gaborone, Botswana",
+      startDate: "October 2024",
+      endDate: "Present",
+      responsibilities: [
+          "Own L1 security operations for an enterprise client environment of 82 Wazuh agents spanning Windows Server, Red Hat Enterprise Linux, AIX, and CentOS, processing 800,000–900,000 security events per day.",
+          "Serve as one of two analysts covering the entire estate, and the only person in the organisation outside the offshore L2/L3 team able to produce client SecOps reporting.",
+          "Act as primary client-facing contact for security operations, coordinating incident escalation and remediation between the client and an offshore L2/L3 team across a 3.5-hour time zone gap.",
+          "Produce daily, weekly, and monthly SecOps reports covering detection findings, alert severity distribution, endpoint health, and remediation recommendations for client stakeholders.",
+          "Built a Python reporting tool that reduced report production from 1–2 hours to 15–40 minutes, a roughly 70% cut in a recurring daily operational task.",
+          "Authored the internal documentation standardising SecOps reporting methodology, then automated that methodology into the reporting pipeline.",
+          "Triage CVE vulnerability findings across the estate, assessing exposure and coordinating remediation guidance with the client.",
+          "Investigated a web-based attack campaign originating from a single source IP, establishing scope and coordinating response with the client and offshore team.",
+          "Monitor endpoint agent health and connectivity across the fleet, identifying and resolving agent disconnections to maintain continuous visibility."
+      ]
+    },
+    {
+      id: 2,
+      title: "Cybersecurity Intern",
+      company: "TechBulls Botswana",
+      location: "Gaborone, Botswana",
+      startDate: "October 2023",
+      endDate: "October 2024",
+      responsibilities: [
+          "Monitored client endpoint agent health and connectivity across the estate via Wazuh SIEM, verifying continuous coverage and escalating platform issues to the offshore team responsible for L2/L3 support.",
+          "Compiled daily monitoring reports for internal supervisor review, building early security reporting and documentation practice.",
+          "Built working knowledge of the client environment, its telemetry sources, and the SIEM platform, later relied on when L1 support transferred in-house."
+      ]
+    },
+    {
+      id: 3,
+      title: "Tech Support Intern",
+      company: "Botswana Accountancy College",
+      location: "Gaborone, Botswana",
+      startDate: "January 2020",
+      endDate: "August 2020",
+      responsibilities: [
+          "Delivered technical support to staff and students, resolving hardware, software, and network security issues efficiently.",
+          "Configured and maintained IT equipment and systems, contributing to a stable and secure IT environment.",
+          "Supported network monitoring and troubleshooting activities, gaining foundational experience in network security operations.",
+          "Provided technical onboarding and training to new staff on IT systems and security best practices."
+      ]
+    }
+  ];
 
-export const skillsList: SkillProps[] = [
+  export const skillsList: SkillProps[] = [
     {
         id: 1,
-        domain: "Cybersecurity & SOC Operations",
+        domain: "Security Operations",
         details: [
             "SIEM Deployment & Configuration (Wazuh)", "Alert Triage", "Threat Detection",
-            "Log Analysis & Correlation", "Security Event Monitoring","Incident Response",
-            "Endpoint Security", "Vulnerability Management", "SOC Operations", "Security Reporting"
+            "Log Analysis & Correlation", "Security Event Monitoring", "Incident Response",
+            "Endpoint Security", "File Integrity Monitoring (FIM)", "Vulnerability Management",
+            "CVE Triage", "SOC Operations"
         ]
     },
     {
         id: 2,
-        domain: "Cloud & Infrastructure",
+        domain: "Detection Engineering",
         details: [
-            "Oracle Cloud Infrastructure (OCI)", "Identity & Access Management (IAM)", "Cloud Security Monitoring",
-            "Cloud Observability & Monitoring", "Cloud Infrastructure Architecture", "OCI Foundations", "Associate-level Administration"
+            "Custom Detection Rule Development", "Correlation Rule Design", "MITRE ATT&CK Mapping",
+            "MITRE ATT&CK Coverage Analysis", "Detection Tuning", "False Positive Reduction",
+            "Rule Validation & Testing", "Attack Simulation"
         ]
     },
     {
         id: 3,
-        domain: "Network Security",
+        domain: "Telemetry & Logging",
         details: [
-            "Network Security Monitoring", "Network Traffic Analysis", "SOC Operations Workflow", "Threat Detection Lifecycle"
+            "Windows Security Event Log", "Sysmon", "PowerShell Module & Script Block Logging",
+            "Windows Event Channel Collection", "Linux syslog & sshd Authentication Logs",
+            "Log Ingestion & Parsing"
         ]
     },
     {
         id: 4,
-        domain: "Software Engineering",
+        domain: "Platforms & Systems",
         details: [
-            "SDLC", "Application Architecture","React & Next.js", "Secure Coding"
+            "Windows Server", "Red Hat Enterprise Linux", "AIX", "CentOS", "Ubuntu Server"
         ]
     },
     {
         id: 5,
-        domain: "General Technical Skills",
+        domain: "Cloud & Infrastructure",
         details: [
-            "Technical Report Writing", "IT Consulting", "Problem Solving"
+            "Oracle Cloud Infrastructure (OCI)", "Identity & Access Management (IAM)",
+            "Cloud Security Monitoring", "Cloud Observability & Monitoring",
+            "Cloud Infrastructure Architecture"
+        ]
+    },
+    {
+        id: 6,
+        domain: "Network Security",
+        details: [
+            "Network Security Monitoring", "Network Traffic Analysis", "Threat Detection Lifecycle"
+        ]
+    },
+    {
+        id: 7,
+        domain: "Automation & Reporting",
+        details: [
+            "Python Security Automation", "SecOps Reporting Standards", "Security Incident Reporting",
+            "Remediation Documentation", "Security Policy Writing", "Technical Report Writing"
+        ]
+    },
+    {
+        id: 8,
+        domain: "Software Engineering",
+        details: [
+            "SDLC", "Application Architecture", "React & Next.js", "Secure Coding", "Git & Version Control"
         ]
     }
 ]

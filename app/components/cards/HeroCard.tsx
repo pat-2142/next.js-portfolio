@@ -1,66 +1,29 @@
-"use client";
-// HeroCard — the top section of the home page with a bio, CTA buttons, and headshot.
-// Uses a skeleton loading pattern (same approach as ImageWrapper) to show an
-// animated pulse placeholder while the headshot loads, then fades the image in.
-// Marked "use client" because it uses useState to track image load state.
-
 import Image from "next/image";
-import { useState } from "react";
 import { SectionWrapper } from "../layout";
 import { PrimaryButton, SecondaryButton } from "../ui";
-import { COLORS, CONTACT } from "@/lib/constants";
-import { SITE } from "@/lib/constants";
 
 export default function HeroCard() {
-  // Tracks whether the headshot has finished loading
-  const [loaded, setLoaded] = useState(false);
-
-  return (
-    <SectionWrapper heading="Cybersecurity Consultant | Aspiring Cloud Security Engineer">
-      {/* ── Bio column ── */}
-      <div className="flex flex-1 flex-col">
-        <p>
-          Cybersecurity consultant based in Botswana with hands-on experience in
-          SOC operations, SIEM deployment, and cloud security. I manage endpoint
-          monitoring using Wazuh, coordinate incident response workflows, and
-          produce security analysis report. I hold three OCI 2025 certifications
-          reflecting a deliberate focus on cloud security. My background also
-          includes full-cycle software development — from requirements and
-          architecture through to deployment and maintenance — giving me a
-          practical understanding of how applications are built, which sharpens
-          how I assess and secure them. I'm building toward a career at the
-          intersection of security operations, cloud infrastructure, and application
-          security.
-        </p>
-        <div className="flex gap-3 mt-5">
-          <PrimaryButton label="VISIT LINKEDIN" href={CONTACT.linkedin} target="_blank" />
-          <SecondaryButton label="VIEW LABS" href="/labs" />
-        </div>
-      </div>
-
-      {/* ── Headshot column ── */}
-      <div className="flex flex-1 items-center justify-center">
-        {/* Outer div matches the image size so the skeleton fills the same space */}
-        <div className="relative w-64 h-64 md:w-96 md:h-96">
-          {/* Skeleton pulse shown until the image loads */}
-          {!loaded && (
-            <div
-              className="absolute inset-0 rounded-full animate-pulse"
-              style={{ backgroundColor: COLORS.card }}
-            />
-          )}
-          <Image
-            src={SITE.headshotPath}
-            alt={`${SITE.name} headshot`}
-            fill
-            priority={true}
-            onLoad={() => setLoaded(true)}
-            className={`rounded-full ring-2 md:ring-5 ring-[#6366F1] object-cover transition-opacity duration-500 ${
-              loaded ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        </div>
-      </div>
-    </SectionWrapper>
-  );
+    return (
+        <SectionWrapper heading="SOC Analyst | Security Operations & SIEM (Wazuh) | Detection Engineering | OCI Certified">
+            <div className="flex flex-1 flex-col min-w-0">
+                <p>SOC analyst based in Botswana. I run day-to-day security operations for an enterprise client environment of 82 endpoints processing 800,000–900,000 security events daily through Wazuh — owning L1 triage and escalation, acting as the primary client-facing contact alongside an offshore L2/L3 team, and producing the daily, weekly and monthly SecOps reporting. I wrote the internal standard for that reporting and automated it in Python, cutting production time by around 70%.</p>
+                <p className="mt-4">Alongside that I publish a detection engineering lab series built on my own Wazuh deployment — engineering Windows telemetry with Sysmon and PowerShell logging, writing custom correlation rules mapped to MITRE ATT&amp;CK, tuning out false positives, and auditing what those detections actually cover rather than what they claim to. Three OCI 2025 certifications and a software engineering background shape where I&apos;m heading: cloud security engineering, at the intersection of detection and infrastructure.</p>
+                <div className="flex gap-3 mt-5">
+                    <PrimaryButton label="LINKEDIN" href="https://linkedin.com/in/phatsimo-pheko-728bb6229" target="_blank" />
+                    <SecondaryButton label="VIEW LABS" href="/labs" />
+                </div>
+            </div>
+            <div className="flex flex-1 shrink-0 items-center justify-center">
+                <div className="relative w-64 h-64 md:w-96 md:h-96">
+                    <Image
+                        src="/images/headshot.jpg"
+                        alt="Phatsimo Pheko"
+                        fill
+                        sizes="(min-width: 768px) 384px, 256px"
+                        className="rounded-full ring-2 md:ring-5 ring-[#6366F1] object-cover"
+                    />
+                </div>
+            </div>
+        </SectionWrapper>
+    );
 }
