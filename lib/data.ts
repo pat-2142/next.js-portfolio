@@ -10,7 +10,7 @@ export const experienceList: ExperienceProps[] = [
       endDate: "Present",
       responsibilities: [
           "Own L1 security operations for an enterprise client environment of 82 Wazuh agents spanning Windows Server, Red Hat Enterprise Linux, AIX, and CentOS, processing 800,000–900,000 security events per day.",
-          "Serve as one of two analysts covering the entire estate, and the only person in the organisation outside the offshore L2/L3 team able to produce client SecOps reporting.",
+          "Cover the full estate within a small in-house security team, owning the client SecOps reporting function end to end.",
           "Act as primary client-facing contact for security operations, coordinating incident escalation and remediation between the client and an offshore L2/L3 team across a 3.5-hour time zone gap.",
           "Produce daily, weekly, and monthly SecOps reports covering detection findings, alert severity distribution, endpoint health, and remediation recommendations for client stakeholders.",
           "Built a Python reporting tool that reduced report production from 1–2 hours to 15–40 minutes, a roughly 70% cut in a recurring daily operational task.",

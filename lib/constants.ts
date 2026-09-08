@@ -6,18 +6,23 @@
 // Used in layout.tsx for metadata (title, OG tags, etc.) and ContactCard
 export const SITE = {
   name: "Phatsimo Pheko",
-  role: "Cybersecurity Consultant",
+  role: "SOC Analyst | Detection Engineering",
   url: "https://phatsimopheko.com",
   stagingUrl: "https://next-js-portfolio-gules.vercel.app",
   description:
-    "Cybersecurity consultant based in Botswana specialising in SOC operations, SIEM deployment with Wazuh, and Oracle Cloud Infrastructure. OCI Certified.",
+    "SOC analyst in Botswana running security operations for an 82-endpoint enterprise estate on Wazuh. Detection engineering, SIEM tuning, OCI certified.",
   shortDescription:
-    "SOC operations, Wazuh SIEM deployment, and OCI-certified cloud security — based in Botswana, open to remote.",
+    "SOC analyst in Botswana. Security operations at scale on Wazuh, detection engineering, and a published SIEM lab series. OCI certified.",
   headshotPath: "/images/headshot.jpg",
+  // Note: the meta keywords tag has been ignored by search engines for well over
+  // a decade. Kept only for completeness — it carries no SEO weight either way.
   keywords: [
-    "Cybersecurity Consultant",
     "SOC Analyst",
+    "Detection Engineering",
     "Wazuh SIEM",
+    "Security Operations",
+    "MITRE ATT&CK",
+    "Sysmon",
     "OCI Certified",
     "Cloud Security",
     "Botswana",
@@ -27,6 +32,10 @@ export const SITE = {
 
 // ─── Contact details ──────────────────────────────────────────────────────────
 // Used in ContactCard. Change once here instead of hunting through JSX.
+// github/githubLabel are intentionally retained but not currently rendered —
+// the profile's visible repos are front-end practice projects, so linking it
+// from a security portfolio undercuts the rest of the site. Restore the list
+// item in ContactCard once there's a pinned security repo worth landing on.
 export const CONTACT = {
   email: "phatsimopheko11@gmail.com",
   linkedin: "https://linkedin.com/in/phatsimo-pheko-728bb6229",
