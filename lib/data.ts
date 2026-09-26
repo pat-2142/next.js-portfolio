@@ -9,7 +9,7 @@ export const experienceList: ExperienceProps[] = [
       startDate: "October 2024",
       endDate: "Present",
       responsibilities: [
-          "Own L1 security operations for an enterprise client environment of 82 Wazuh agents spanning Windows Server, Red Hat Enterprise Linux, AIX, and CentOS, processing 800,000–900,000 security events per day.",
+          "Own L1 security operations for an enterprise client environment of 80+ Wazuh agents spanning Windows Server, Red Hat Enterprise Linux, AIX, and CentOS, processing 800,000–900,000 security events per day.",
           "Cover the full estate within a small in-house security team, owning the client SecOps reporting function end to end.",
           "Act as primary client-facing contact for security operations, coordinating incident escalation and remediation between the client and an offshore L2/L3 team across a 3.5-hour time zone gap.",
           "Produce daily, weekly, and monthly SecOps reports covering detection findings, alert severity distribution, endpoint health, and remediation recommendations for client stakeholders.",
@@ -191,7 +191,7 @@ export const labSeriesList: LabSeriesProps[] = [
     {
         id: 1,
         title: "Building a Production-Grade SOC: A Wazuh Lab Series",
-        description: "A hands-on, planned 20+ part series documenting the build of a production-grade SOC using Wazuh—covering deployment, detection engineering, alerting, and incident response, one lab at a time.",
+        description: "A hands-on, planned 10+ part series documenting the build of a production-grade SOC using Wazuh—covering deployment, detection engineering, alerting, and incident response, one lab at a time.",
         link: "/labs/wazuh-labs",
         tags: [
             "SIEM",

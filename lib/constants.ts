@@ -10,7 +10,7 @@ export const SITE = {
   url: "https://phatsimopheko.com",
   stagingUrl: "https://next-js-portfolio-gules.vercel.app",
   description:
-    "SOC analyst in Botswana running security operations for an 82-endpoint enterprise estate on Wazuh. Detection engineering, SIEM tuning, OCI certified.",
+    "SOC analyst in Botswana running security operations for an 80+-endpoint enterprise estate on Wazuh. Detection engineering, SIEM tuning, OCI certified.",
   shortDescription:
     "SOC analyst in Botswana. Security operations at scale on Wazuh, detection engineering, and a published SIEM lab series. OCI certified.",
   headshotPath: "/images/headshot.jpg",
