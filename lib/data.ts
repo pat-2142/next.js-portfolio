@@ -121,17 +121,6 @@ export const experienceList: ExperienceProps[] = [
 export const certificateList: CertificateProps[] = [
     {
         id: 1,
-        title: "OCI FOUNDATIONS ASSOCIATE",
-        description: "Validates core knowledge of Oracle Cloud Infrastructure services, cloud computing concepts, pricing models, and security fundamentals across OCI environments.",
-        tags: [
-            "CLOUD FUNDAMENTALS",
-            "OCI",
-            "SECURITY"
-        ],
-        link: "https://catalog-education.oracle.com/ords/certview/sharebadge?id=AB9728D9D73038C72152D973D786277ED68B04B5B93096CAEFD43DA84407D89B"
-    },
-    {
-        id: 2,
         title: "OCI ARCHITECT ASSOCIATE",
         description: "Demonstrates the ability to design scalable, resilient, and secure cloud infrastructure solutions on Oracle Cloud Infrastructure, including networking, compute, and storage architecture.",
         tags: [
@@ -142,7 +131,7 @@ export const certificateList: CertificateProps[] = [
         link: "https://catalog-education.oracle.com/ords/certview/sharebadge?id=16C8267F4E7B1BFB37F3DA0A54B499E02B592E4046D4E919399A6CE1CF3F6394"
     },
     {
-        id: 3,
+        id: 2,
         title: "OCI OBSERVABILITY PROFESSIONAL",
         description: "Validates expertise in implementing monitoring, logging, alerting, and observability strategies across Oracle Cloud Infrastructure environments to maintain visibility and operational health.",
         tags: [
@@ -151,6 +140,28 @@ export const certificateList: CertificateProps[] = [
             "OBSERVABILITY"
         ],
         link: "https://catalog-education.oracle.com/ords/certview/sharebadge?id=1940A68E7777C07EE681EE8110DE2D683D7EAB5B023C76C5825FD5E0ACD5CA47"
+    },
+    {
+        id: 3,
+        title: "AWS CERTIFIED AI PRACTITIONER",
+        description: "Validates foundational knowledge of AI, machine learning, and generative AI on AWS, including foundation model applications, responsible AI practices, and the security, compliance, and governance of AI solutions.",
+        tags: [
+            "AI FUNDAMENTALS",
+            "AWS",
+            "AI GOVERNANCE"
+        ],
+        link: "https://www.credly.com/badges/7afdaf50-532a-4394-9a52-773d280dfd09/public_url"
+    },
+    {
+        id: 4,
+        title: "OCI FOUNDATIONS ASSOCIATE",
+        description: "Validates core knowledge of Oracle Cloud Infrastructure services, cloud computing concepts, pricing models, and security fundamentals across OCI environments.",
+        tags: [
+            "CLOUD FUNDAMENTALS",
+            "OCI",
+            "SECURITY"
+        ],
+        link: "https://catalog-education.oracle.com/ords/certview/sharebadge?id=AB9728D9D73038C72152D973D786277ED68B04B5B93096CAEFD43DA84407D89B"
     }
 ]
 
