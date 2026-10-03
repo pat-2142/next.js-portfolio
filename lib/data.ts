@@ -55,9 +55,8 @@ export const skillsList: SkillProps[] = [
         domain: "Security Operations",
         details: [
             "SIEM Deployment & Configuration (Wazuh)", "Alert Triage", "Threat Detection",
-            "Log Analysis & Correlation", "Security Event Monitoring", "Incident Response",
-            "Endpoint Security", "File Integrity Monitoring (FIM)", "Vulnerability Management",
-            "CVE Triage", "SOC Operations"
+            "Log Analysis & Correlation", "Incident Response", "Endpoint Security",
+            "File Integrity Monitoring (FIM)", "Vulnerability Management", "CVE Triage", "SOC Operations"
         ]
     },
     {
@@ -90,33 +89,25 @@ export const skillsList: SkillProps[] = [
         domain: "Cloud & Infrastructure",
         details: [
             "Amazon Web Services (AWS)", "Oracle Cloud Infrastructure (OCI)", "Identity & Access Management (IAM)",
-            "Cloud Security Monitoring", "Cloud Observability & Monitoring",
-            "Cloud Infrastructure Architecture"
+            "Cloud Observability & Monitoring", "Cloud Infrastructure Architecture"
         ]
     },
     {
         id: 6,
-        domain: "Network Security",
+        domain: "Automation & Reporting",
         details: [
-            "Network Security Monitoring", "Network Traffic Analysis", "Threat Detection Lifecycle"
+            "Python Security Automation", "Process Documentation", "Security Incident Reporting",
+            "Remediation Documentation", "Technical Report Writing"
         ]
     },
     {
         id: 7,
-        domain: "Automation & Reporting",
-        details: [
-            "Python Security Automation", "Process Documentation", "Security Incident Reporting",
-            "Remediation Documentation", "Security Policy Writing", "Technical Report Writing"
-        ]
-    },
-    {
-        id: 8,
         domain: "Software Engineering",
         details: [
-            "SDLC", "Application Architecture", "React & Next.js", "Secure Coding", "Git & Version Control"
+            "SDLC", "Application Architecture", "React & Next.js", "Secure Coding", "SQL", "Git & Version Control"
         ]
     }
-];
+]
 
 export const certificateList: CertificateProps[] = [
     {
