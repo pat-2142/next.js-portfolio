@@ -3,7 +3,7 @@ import { CertificateProps, EducationProps, ExperienceProps, ProjectProps, SkillP
 export const experienceList: ExperienceProps[] = [
     {
       id: 1,
-      title: "Junior Cybersecurity Consultant — SOC Analyst",
+      title: "Cybersecurity Consultant — SOC Analyst",
       company: "TechBulls Botswana",
       location: "Gaborone, Botswana",
       startDate: "October 2024",
@@ -14,7 +14,7 @@ export const experienceList: ExperienceProps[] = [
           "Act as primary client-facing contact for security operations, coordinating incident escalation and remediation between the client and an offshore L2/L3 team across a 3.5-hour time zone gap.",
           "Produce daily, weekly, and monthly SecOps reports covering detection findings, alert severity distribution, endpoint health, and remediation recommendations for client stakeholders.",
           "Built a Python reporting tool that reduced report production from 1–2 hours to 15–40 minutes, a roughly 70% cut in a recurring daily operational task.",
-          "Authored the internal documentation standardising SecOps reporting methodology, then automated that methodology into the reporting pipeline.",
+          "Documented the SecOps reporting process inherited from the L2/L3 team to make it repeatable, which became the basis for automating it and freed time for deeper analysis of alert data.",
           "Triage CVE vulnerability findings across the estate, assessing exposure and coordinating remediation guidance with the client.",
           "Investigated a web-based attack campaign originating from a single source IP, establishing scope and coordinating response with the client and offshore team.",
           "Monitor endpoint agent health and connectivity across the fleet, identifying and resolving agent disconnections to maintain continuous visibility."
@@ -47,9 +47,9 @@ export const experienceList: ExperienceProps[] = [
           "Provided technical onboarding and training to new staff on IT systems and security best practices."
       ]
     }
-  ];
+];
 
-  export const skillsList: SkillProps[] = [
+export const skillsList: SkillProps[] = [
     {
         id: 1,
         domain: "Security Operations",
@@ -105,7 +105,7 @@ export const experienceList: ExperienceProps[] = [
         id: 7,
         domain: "Automation & Reporting",
         details: [
-            "Python Security Automation", "SecOps Reporting Standards", "Security Incident Reporting",
+            "Python Security Automation", "Process Documentation", "Security Incident Reporting",
             "Remediation Documentation", "Security Policy Writing", "Technical Report Writing"
         ]
     },
@@ -116,7 +116,7 @@ export const experienceList: ExperienceProps[] = [
             "SDLC", "Application Architecture", "React & Next.js", "Secure Coding", "Git & Version Control"
         ]
     }
-]
+];
 
 export const certificateList: CertificateProps[] = [
     {
