@@ -89,7 +89,7 @@ export const experienceList: ExperienceProps[] = [
         id: 5,
         domain: "Cloud & Infrastructure",
         details: [
-            "Oracle Cloud Infrastructure (OCI)", "Identity & Access Management (IAM)",
+            "Amazon Web Services (AWS)", "Oracle Cloud Infrastructure (OCI)", "Identity & Access Management (IAM)",
             "Cloud Security Monitoring", "Cloud Observability & Monitoring",
             "Cloud Infrastructure Architecture"
         ]
@@ -154,6 +154,17 @@ export const certificateList: CertificateProps[] = [
     },
     {
         id: 4,
+        title: "AWS CERTIFIED CLOUD PRACTITIONER",
+        description: "Validates foundational knowledge of AWS cloud concepts, core services, security and compliance under the shared responsibility model, and pricing and billing across the AWS platform.",
+        tags: [
+            "CLOUD FUNDAMENTALS",
+            "AWS",
+            "CLOUD SECURITY"
+        ],
+        link: "https://www.credly.com/badges/3d0884c5-3289-40b2-bdc3-ed8aa2c63eda/public_url"
+    },
+    {
+        id: 5,
         title: "OCI FOUNDATIONS ASSOCIATE",
         description: "Validates core knowledge of Oracle Cloud Infrastructure services, cloud computing concepts, pricing models, and security fundamentals across OCI environments.",
         tags: [

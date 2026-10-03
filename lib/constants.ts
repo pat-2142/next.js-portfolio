@@ -10,9 +10,9 @@ export const SITE = {
   url: "https://phatsimopheko.com",
   stagingUrl: "https://next-js-portfolio-gules.vercel.app",
   description:
-    "SOC analyst in Botswana running security operations for an 80+-endpoint enterprise estate on Wazuh. Detection engineering, SIEM tuning, OCI certified.",
+    "SOC analyst in Botswana running security operations for an enterprise estate of 80+ endpoints on Wazuh. Detection engineering, SIEM tuning, AWS and OCI certified.",
   shortDescription:
-    "SOC analyst in Botswana. Security operations at scale on Wazuh, detection engineering, and a published SIEM lab series. OCI certified.",
+    "SOC analyst in Botswana. Security operations at scale on Wazuh, detection engineering, and a published SIEM lab series. AWS and OCI certified.",
   headshotPath: "/images/headshot.jpg",
   // Note: the meta keywords tag has been ignored by search engines for well over
   // a decade. Kept only for completeness — it carries no SEO weight either way.
@@ -23,6 +23,7 @@ export const SITE = {
     "Security Operations",
     "MITRE ATT&CK",
     "Sysmon",
+    "AWS Certified",
     "OCI Certified",
     "Cloud Security",
     "Botswana",
