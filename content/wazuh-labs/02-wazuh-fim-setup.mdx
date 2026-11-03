@@ -15,7 +15,7 @@ Wazuh implements FIM through its `syscheck` module, which is configured in `osse
 - **`realtime`** — When set to `yes`, the agent uses operating system-level file watch APIs (inotify on Linux, ReadDirectoryChangesW on Windows) to detect changes instantly. Without this, monitoring is deferred to the next scheduled scan, which defaults to every 12 hours.
 - **`report_changes`** — Captures a diff of what changed inside a text file, not just that it changed. This is particularly valuable for configuration files where the specific line added or removed is the most important piece of evidence.
 - **`check_all`** — Enables monitoring of all available file attributes: MD5, SHA1, and SHA256 hashes, file size, permissions, owner, and modification timestamps.
-- **`check_sums`** — A lighter alternative to `check_all` that monitors only cryptographic hashes, useful for high-volume directories where full attribute checks would generate excessive noise.
+- **`check_sum`** — A lighter alternative to `check_all` that monitors only the cryptographic hashes (MD5, SHA1, and SHA256), useful for high-volume directories where full attribute checks would generate excessive noise.
 - **`recursion_level`** — Controls how many subdirectory levels deep the agent will monitor. A value of `0` means only the top-level directory is watched.
 
 The objective of this lab was to:
@@ -160,7 +160,7 @@ Three tiers were identified:
 <!-- ==================== TIER 1 ==================== -->
 
 <!-- System32 — attackers replace or plant binaries here for persistence and masquerading -->
-<directories realtime="yes" report_changes="yes" check_all="yes">%WINDIR%\System32</directories>
+<directories realtime="yes" check_all="yes">%WINDIR%\System32</directories>
 
 <!-- Hosts file — commonly tampered to redirect DNS resolution -->
 <directories realtime="yes" report_changes="yes" check_all="yes">%WINDIR%\System32\drivers\etc</directories>
@@ -173,7 +173,8 @@ Three tiers were identified:
 <directories realtime="yes" report_changes="yes" check_all="yes">%WINDIR%\System32\Tasks</directories>
 
 <!-- SAM and security hive — tampering here indicates credential access activity -->
-<directories realtime="yes" report_changes="yes" check_all="yes">%WINDIR%\System32\config</directories>
+<!-- report_changes omitted: these are binary registry hives, so a content diff adds no value -->
+<directories realtime="yes" check_all="yes">%WINDIR%\System32\config</directories>
 
 
 <!-- ==================== TIER 2 ==================== -->
@@ -206,7 +207,7 @@ higher-specification systems.
 
 <!-- User home directories — useful for insider threat and DLP use cases -->
 <!-- Removed after testing due to excessive scan overhead -->
-<!-- <directories check_sums="yes" check_size="yes">C:\Users</directories> -->
+<!-- <directories check_sum="yes" check_size="yes">C:\Users</directories> -->
 ```
 
 ### Linux Configuration
@@ -215,10 +216,11 @@ higher-specification systems.
 <!-- ==================== TIER 1 ==================== -->
 
 <!-- Core system binaries — replacing these is a classic rootkit and masquerading technique -->
-<directories realtime="yes" report_changes="yes" check_all="yes">/bin</directories>
-<directories realtime="yes" report_changes="yes" check_all="yes">/sbin</directories>
-<directories realtime="yes" report_changes="yes" check_all="yes">/usr/bin</directories>
-<directories realtime="yes" report_changes="yes" check_all="yes">/usr/sbin</directories>
+<!-- report_changes omitted: these are binary executables, so a content diff adds no value -->
+<directories realtime="yes" check_all="yes">/bin</directories>
+<directories realtime="yes" check_all="yes">/sbin</directories>
+<directories realtime="yes" check_all="yes">/usr/bin</directories>
+<directories realtime="yes" check_all="yes">/usr/sbin</directories>
 
 <!-- PAM configuration — modifying PAM can allow authentication bypass on any account -->
 <directories realtime="yes" report_changes="yes" check_all="yes">/etc/pam.d</directories>
@@ -252,8 +254,14 @@ higher-specification systems.
 <!-- Boot directory — detect bootkit or bootloader tampering -->
 <directories realtime="yes" check_all="yes">/boot</directories>
 
-<!-- Wazuh agent directory — detect tampering with the monitoring agent itself -->
-<directories realtime="yes" check_all="yes">/var/ossec</directories>
+<!-- Wazuh agent binaries and config — detect tampering with the agent itself.
+     Scope this narrowly: never monitor /var/ossec as a whole. Its runtime
+     subtrees (/var/ossec/queue, /var/ossec/logs, /var/ossec/var) are rewritten
+     constantly — queue/rids/sender_counter alone ticks many times per second —
+     and watching them in realtime creates a FIM feedback loop that floods the
+     alert pipeline with rule 5501/550 events. See the correction note below. -->
+<directories realtime="yes" check_all="yes">/var/ossec/bin</directories>
+<directories check_all="yes">/var/ossec/etc</directories>
 
 
 <!-- ==================== TIER 3 ==================== -->
@@ -262,19 +270,21 @@ higher-specification systems.
 <directories check_all="yes">/etc</directories>
 
 <!-- Home and root directories — light monitoring for dropped tools and shell history changes -->
-<directories check_sums="yes" check_size="yes">/home</directories>
-<directories check_sums="yes" check_size="yes">/root</directories>
+<directories check_sum="yes" check_size="yes">/home</directories>
+<directories check_sum="yes" check_size="yes">/root</directories>
 ```
 
 ### Reasoning Summary
 
 Several decisions in this configuration are worth highlighting explicitly.
 
-**Monitoring the agent itself** — Both the Windows and Linux configurations include the Wazuh agent directory as a Tier 2 monitored path. An attacker who has gained access to a system may attempt to disable or modify the monitoring agent to remove visibility before proceeding. Alerting on changes to the agent's own files means that defense evasion attempts are themselves detected.
+**Monitoring the agent itself — scope it narrowly** — An attacker who has gained access to a system may attempt to disable or modify the monitoring agent to remove visibility before proceeding, so alerting on changes to the agent's own files is a legitimate defense-evasion detection. But this must be scoped to the agent's *static* files — its binaries (`/var/ossec/bin`) and configuration (`/var/ossec/etc`) — never the install directory as a whole. The agent's runtime subtrees (`/var/ossec/queue`, `/var/ossec/logs`, `/var/ossec/var`) are rewritten continuously by the agent itself, and watching them — especially with `realtime="yes"` — turns normal agent operation into a storm of FIM alerts.
+
+> **Correction (2026-11-03):** An earlier version of this lab monitored `/var/ossec` as a single broad `realtime` directive (shown above as the scoped `bin`/`etc` entries). On the Linux agent that directive created a FIM feedback loop: the file `/var/ossec/queue/rids/sender_counter`, an internal message counter the agent rewrites many times per second, generated a continuous stream of rule 550 ("Integrity checksum changed") alerts — roughly 26,000 per day — each of which drove further agent activity that ticked the counter again. This was the true root cause of the disk-space incident later described in Lab 05, which that write-up had originally and incorrectly attributed to `logall_json`. The fix is the narrowly scoped configuration now shown above; stock Wazuh leaves `/var/ossec` unmonitored for exactly this reason.
 
 **`report_changes` is omitted from binary directories** — For directories like `/lib`, `/lib64`, and `%WINDIR%\System32`, the files are binary executables and shared libraries. A diff of a binary file produces output that is not human-readable and adds no analytical value. The alert itself — that a hash changed on a system binary — is sufficient. `report_changes` is reserved for text-based files such as configuration files, scripts, and startup items where the changed content is directly interpretable.
 
-**Tier 3 directories use `check_sums` rather than `check_all`** — For high-volume directories like `/etc`, `/home`, and `C:\Users`, running full attribute checks on every file during a scheduled scan is resource-intensive. Using `check_sums` focuses monitoring on the most important indicator — whether the file content changed — without the overhead of checking every metadata attribute on thousands of files.
+**Tier 3 directories use `check_sum` rather than `check_all`** — For high-volume directories like `/etc`, `/home`, and `C:\Users`, running full attribute checks on every file during a scheduled scan is resource-intensive. Using `check_sum` focuses monitoring on the most important indicator — whether the file content changed — without the overhead of checking every metadata attribute on thousands of files.
 
 **Change management context** — In a production SOC, this configuration would be paired with a change management process. During a scheduled patching window, analysts acknowledge expected FIM alerts in bulk so they do not mask genuine detections. Without this process, patch Tuesday on a Windows environment would generate hundreds of System32 alerts and significantly degrade signal quality. The tiered approach helps by keeping Tier 3 alerts on a scheduled cadence that aligns more naturally with maintenance windows.
 

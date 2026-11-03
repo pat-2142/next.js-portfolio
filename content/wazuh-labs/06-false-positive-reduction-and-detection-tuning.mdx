@@ -21,7 +21,7 @@ No topology changes since Lab 05. One infrastructure issue surfaced mid-lab and 
 
 ## Part 1 — Tuning `100050` and `100051`
 
-An `ignore="120"` attribute was added to both custom rules, matching their existing 120-second `timeframe` rather than borrowing the shorter `ignore="60"` used by built-in rule `5712` — the intent being to suppress re-firing for at least one full detection cycle rather than a fixed, arbitrarily shorter window.
+An `ignore="120"` attribute was added to both custom rules. On the Linux rule (`100050`) this matches its 120-second `timeframe` exactly — one full detection cycle. On the Windows rule (`100051`), whose `timeframe` is 240 seconds, the same `ignore="120"` is half the detection window: a deliberate floor on re-firing rather than a full-cycle match, chosen to keep the two custom rules' suppression consistent. Either way it is a longer suppression window than the `ignore="60"` used by built-in rule `5712`, the intent being to suppress re-firing for a meaningful interval rather than an arbitrarily short one.
 
 To validate, the identical Lab 05 attack was re-run against the Linux agent:
 

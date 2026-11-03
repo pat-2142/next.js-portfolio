@@ -9,15 +9,15 @@ export const experienceList: ExperienceProps[] = [
       startDate: "October 2024",
       endDate: "Present",
       responsibilities: [
-          "Own L1 security operations for an enterprise client environment of 80+ Wazuh agents spanning Windows Server, Red Hat Enterprise Linux, AIX, and CentOS, processing 800,000–900,000 security events per day.",
-          "Cover the full estate within a small in-house security team, owning the client SecOps reporting function end to end.",
-          "Act as primary client-facing contact for security operations, coordinating incident escalation and remediation between the client and an offshore L2/L3 team across a 3.5-hour time zone gap.",
-          "Produce daily, weekly, and monthly SecOps reports covering detection findings, alert severity distribution, endpoint health, and remediation recommendations for client stakeholders.",
-          "Built a Python reporting tool that reduced report production from 1–2 hours to 15–40 minutes, a roughly 70% cut in a recurring daily operational task.",
-          "Documented the SecOps reporting process inherited from the L2/L3 team to make it repeatable, which became the basis for automating it and freed time for deeper analysis of alert data.",
-          "Triage CVE vulnerability findings across the estate, assessing exposure and coordinating remediation guidance with the client.",
-          "Investigated a web-based attack campaign originating from a single source IP, establishing scope and coordinating response with the client and offshore team.",
-          "Monitor endpoint agent health and connectivity across the fleet, identifying and resolving agent disconnections to maintain continuous visibility."
+        "Own L1 security operations for an enterprise client environment of 80+ Wazuh agents spanning Windows Server, Red Hat Enterprise Linux, AIX, and CentOS, processing 800,000–900,000 security events per day.",
+        "Cover the full estate within a small in-house security team, owning the client SecOps reporting function end to end.",
+        "Act as primary client-facing contact for security operations, coordinating incident escalation and remediation between the client and an offshore L2/L3 team across a 3.5-hour time zone gap.",
+        "Produce daily, weekly, and monthly SecOps reports covering detection findings, alert severity distribution, endpoint health, and remediation recommendations for client stakeholders.",
+        "Drove the automation of daily SecOps reporting using a Python tool, cutting report production from 1–2 hours to 15–40 minutes on a recurring daily task.",
+        "Documented the SecOps reporting process inherited from the L2/L3 team to make it repeatable, establishing the basis for that automation and freeing time for deeper analysis of alert data.",
+        "Triage CVE vulnerability findings across the estate, assessing exposure and coordinating remediation guidance with the client.",
+        "Investigated a web-based attack campaign originating from a single source IP, establishing scope and coordinating response with the client and offshore team.",
+        "Monitor endpoint agent health and connectivity across the fleet, identifying and resolving agent disconnections to maintain continuous visibility."
       ]
     },
     {
